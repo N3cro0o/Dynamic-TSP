@@ -123,19 +123,19 @@ pub fn create_matrix_form_file_matrix(path: Option<&str>) -> Result<Matrix, &'st
                 continue;
             }
             if !buff_string.is_empty() {
-                let val = buff_string.trim().parse().unwrap();
-                m_out.push_edge(x, y, val);
+                if x != y {
+                    let val = buff_string.trim().parse().unwrap();
+                    m_out.push_edge(x, y, val);
+                }
                 y += 1;
                 buff_string.clear();
             }
         }
-        // The last edge cannot be added in inner loop, so we do this here
-        let val = buff_string.trim().parse().unwrap();
-        m_out.push_edge(x, y, val);
+        // The last edge cannot be added in inner loop, so we do this here. But its [x, y] x == y, so just push 0
+        m_out.push_edge(x, y, 0);
         buff_string.clear();
         x += 1;
     }
-    m_out.print_matrix();
     Ok(m_out)
 }
 

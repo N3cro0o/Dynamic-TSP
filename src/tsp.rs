@@ -1,7 +1,36 @@
+use factorial::Factorial;
+
 use super::Matrix;
+
+#[allow(non_camel_case_types)]
+#[derive(Debug)]
+pub struct TSP_Data{
+    length: isize,
+    target: usize,
+    vertices: Vec<usize>
+}
+
+impl TSP_Data {
+    pub fn is_the_same(&self, target: usize, vertices: Vec<usize>) -> bool {
+        if target != self.target {
+            return false;
+        }
+        if vertices.len() != self.vertices.len() {
+            return false;
+        }
+        for v in 0..vertices.len(){
+            if vertices[v] != self.vertices[v] {
+                return false;
+            }
+        }
+        true
+    }
+}
 
 pub fn tsp_standard(matrix: &Matrix) -> Result<(Vec<usize>, usize), &'static str> {
     // Variables
+    let max_factorial:u128 = (matrix.vertices as u128 - 1 ).factorial();
+    let mut permutation_nr: u128 = 0;
     let m_vert = matrix.vertices;
     let mut test_vec: Vec<usize> = vec![0; m_vert]; // Store current path
     let mut test_answ_check = false;
@@ -17,6 +46,11 @@ pub fn tsp_standard(matrix: &Matrix) -> Result<(Vec<usize>, usize), &'static str
 
     // LST standard test
     'lst: loop {
+        // Print percent
+        if permutation_nr % 100_000_000 == 0 {
+            let percent = permutation_nr as f64 / max_factorial as f64 * 100.0;
+            println!("Current -> {percent}% done");
+        }
         // Test to end the 'lst loop
         if *test_vec.get(0).unwrap() == m_vert {break 'lst;}
 
@@ -44,11 +78,78 @@ pub fn tsp_standard(matrix: &Matrix) -> Result<(Vec<usize>, usize), &'static str
 
         // Update permutation
         test_vec = std_update_vector(test_vec, m_vert);
+        permutation_nr += 1;
     }
     if test_answ_check {
         answ = Ok((answ_vec, answ_dist));
     }
     answ
+}
+
+pub fn tsp_dyn(matrix: &Matrix) -> Option<usize> {
+    let mut mem_vec: Vec<TSP_Data> = vec![];
+    let mut perm_vec = vec![];
+    let mut distance = usize::MAX;
+    // Setup vertices vec
+    for i in 1..matrix.vertices {
+        perm_vec.push(i);
+    }
+    for i in 1..matrix.vertices {
+        println!("Now checing vert {i}");
+        let id = tsp_main(matrix, i, perm_vec.clone(), &mut mem_vec);
+        let d = mem_vec[id].length + matrix.matrix[i][0];
+        if (d as usize) < distance {distance = d as usize;}
+    }
+    if distance != usize::MAX {
+        Some(distance)
+    }
+    else {
+        None
+    }
+}
+
+fn tsp_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &mut Vec<TSP_Data>) -> usize {
+    // Setup
+    let mut len = 0;
+    let mut tsp_data = TSP_Data {
+        target: target,
+        vertices: perm_vec.clone(),
+        length: 0
+    };
+
+    // Memorization
+    for data in 0..mem_vec.len() {
+        if mem_vec[data].is_the_same(target, perm_vec.clone()) {
+            return data as usize;
+        }
+    }
+
+    // Check if last
+    if perm_vec.len() == 1{
+        tsp_data.length = matrix.matrix[0][target];
+        mem_vec.push(tsp_data);
+        len = mem_vec.len() as usize - 1;
+    }
+    else {
+        let mut distance = isize::MAX;
+        // Create new vec
+        let mut buff_vec = vec![];
+        for j in perm_vec.iter() {
+            // Skip chosen edge
+            if *j == target {continue;}
+            buff_vec.push(*j);
+        }
+        // Test
+        for new_target in buff_vec.iter() {
+            let id = tsp_main(matrix, *new_target, buff_vec.clone(), mem_vec);
+            let d = mem_vec[id].length + matrix.matrix[*new_target][target];
+            if d < distance {distance = d;}
+        }
+        tsp_data.length = distance;
+        mem_vec.push(tsp_data);
+        len = mem_vec.len() - 1;
+    }
+    len
 }
 
 pub fn print_all_permutations(vec_size: usize) -> usize {

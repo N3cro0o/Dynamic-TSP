@@ -30,8 +30,8 @@ fn main() {
         // Menu text
         {
             println!("--------------------------------------------------------------------------");
-            println!("Witaj urzytkowniku! Proszę wybrać opcję komiwojażer!");
-            println!("0. Druk macierzy\n1. Generacja macierzy wykorzystując gęstość.\n2. Wczytanie macierzy z pliku.\n3. Przeprowadzenie podstawowego testu.");
+            println!("Wilkommen to über TSP program! Please select desired komiwojażer option!");
+            println!("0. Print matrix\n1. Density-based generation.\n2. Read from file.\n3. Brute-force TSP.");
             println!();
         }
 
@@ -46,7 +46,7 @@ fn main() {
         input_num = match input_buff.trim().parse::<usize>() {
             Ok(u) => u,
             Err(_) => {
-                println!("Proszę podać liczbę naturalną");
+                println!("Input only natural numbers");
                 continue 'main;
             }
         };
@@ -61,8 +61,8 @@ fn main() {
                 main_matrix = io::console_create_matrix_from_density().randomize();
             }
 
-            11 => {
-                println!("Proszę podać ścieżkę do pliku z macierzą. Ścieszka może myć lokalna albo globalna.");
+            11 => { // Old read function from file
+                println!("Input directory path to the file. Can be local or global.");
                 input_buff.clear();
                 let path: Option<&str> = match std::io::stdin().read_line(&mut input_buff) {
                     Ok(_) => Some(&input_buff.trim()),
@@ -75,7 +75,7 @@ fn main() {
             }
 
             2 => {
-                println!("Proszę podać ścieżkę do pliku z macierzą. Ścieszka może myć lokalna albo globalna.");
+                println!("Input directory path to the file. Can be local or global.");
                 input_buff.clear();
                 let path: Option<&str> = match std::io::stdin().read_line(&mut input_buff) {
                     Ok(_) => Some(&input_buff.trim()),
@@ -105,6 +105,16 @@ fn main() {
                 println!("Dist = {dist}, vec = {vec:?}");
                 println!("Time {}", dur.as_secs_f64());
             }
+            4 => {
+                if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
+                let dist;
+                let start_timestamp = SystemTime::now();
+                dist=tsp::tsp_dyn(&main_matrix).unwrap();
+                let end_timestamp = SystemTime::now();
+                let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
+                println!("Dist = {dist}");
+                println!("Time {}", dur.as_secs_f64());
+            }
 
             20 => {
                 println!("Number larger than 0");
@@ -113,7 +123,7 @@ fn main() {
                 let num = input_buff.trim().parse::<usize>().unwrap();
                 println!("{}", tsp::print_all_permutations(num));
             }
-            
+
             _ => {
                 break 'main;
             }
