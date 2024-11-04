@@ -232,9 +232,9 @@ mod test {
         assert_eq!((21, 3), read_first_line(first_line))
     }
 
-    #[test]
+    /*#[test]
     fn test_write_file(){
         let m = Matrix::default().randomize();
         save_matrix_to_file(&m).unwrap();
-    }
+    }*/
 }

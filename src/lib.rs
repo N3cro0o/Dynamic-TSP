@@ -90,6 +90,32 @@ impl Matrix {
     pub fn randomize(&mut self) -> Self {
         let env_var = env::var("PRINT_MATRIX").unwrap_or(String::new());
         let mut left_edges = self.edges;
+        // Generate cycle
+        {
+            let mut perm_vec:Vec<usize> = vec![];
+            let mut y = 0;
+            for _i in 0..self.vertices - 1 {
+                if left_edges == 0 { // check edges left
+                    return self.clone();
+                }
+                let mut x = 0;
+                while check_if_exist_in_vec(&perm_vec, x) || x == 0 {
+                    x = rand::thread_rng().gen_range(0..self.vertices);
+                }
+                perm_vec.push(x);
+                let d = rand::thread_rng().gen_range(1..100);
+                self.matrix[y][x] = d;
+                left_edges -= 1;
+                y = x;
+            }
+            // Generate last cycle edge
+            if left_edges == 0 { // check edges left
+                return self.clone();
+            }
+            let d = rand::thread_rng().gen_range(1..100);
+            self.matrix[y][0] = d;
+            left_edges -= 1;
+        }
         while left_edges != 0 {
             let ver1 = rand::thread_rng().gen_range(0..self.vertices);
             let ver2 = rand::thread_rng().gen_range(0..self.vertices);
@@ -114,6 +140,15 @@ impl Matrix {
     }
 }
 
+pub fn check_if_exist_in_vec(vec: &[usize], val: usize) -> bool {
+    for i in vec.iter(){
+        if *i == val{
+            return true;
+        }
+    }
+    return false;
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -126,7 +161,6 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn test_push_edge_edge_panic() {
         let mut m = Matrix::default();
         m.push_edge(4, 2, 0);

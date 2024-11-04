@@ -21,7 +21,7 @@ fn main() {
         println!("Time {}", dur.as_secs_f64());
     */
     let mut main_matrix = Matrix::empty();
-
+    println!("{:b}", 15_i32 ^ 1 << 2);
     'main: loop {
         // Setup
         let mut input_buff = String::new();
@@ -116,6 +116,18 @@ fn main() {
                 println!("Time {}", dur.as_secs_f64());
             }
 
+            5 => {
+                if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
+
+                let dist;
+                let start_timestamp = SystemTime::now();
+                dist = dyn_prog::tsp::tsp_dyn_new(&main_matrix);
+                let end_timestamp = SystemTime::now();
+                let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
+                println!("Dist = {dist}");
+                println!("Time {}", dur.as_secs_f64());
+            }
+
             20 => {
                 println!("Number larger than 0");
                 input_buff.clear();
@@ -123,6 +135,7 @@ fn main() {
                 let num = input_buff.trim().parse::<usize>().unwrap();
                 println!("{}", tsp::print_all_permutations(num));
             }
+
 
             _ => {
                 break 'main;

@@ -96,7 +96,7 @@ pub fn tsp_dyn(matrix: &Matrix) -> Option<usize> {
     }
     for i in 1..matrix.vertices {
         println!("Now checing vert {i}");
-        let id = tsp_main(matrix, i, perm_vec.clone(), &mut mem_vec);
+        let id = tsp_dyn_main(matrix, i, perm_vec.clone(), &mut mem_vec);
         let d = mem_vec[id].length + matrix.matrix[i][0];
         if (d as usize) < distance {distance = d as usize;}
     }
@@ -108,7 +108,7 @@ pub fn tsp_dyn(matrix: &Matrix) -> Option<usize> {
     }
 }
 
-fn tsp_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &mut Vec<TSP_Data>) -> usize {
+fn tsp_dyn_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &mut Vec<TSP_Data>) -> usize {
     // Setup
     let mut len = 0;
     let mut tsp_data = TSP_Data {
@@ -141,7 +141,7 @@ fn tsp_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &mut V
         }
         // Test
         for new_target in buff_vec.iter() {
-            let id = tsp_main(matrix, *new_target, buff_vec.clone(), mem_vec);
+            let id = tsp_dyn_main(matrix, *new_target, buff_vec.clone(), mem_vec);
             let d = mem_vec[id].length + matrix.matrix[*new_target][target];
             if d < distance {distance = d;}
         }
@@ -150,6 +150,109 @@ fn tsp_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &mut V
         len = mem_vec.len() - 1;
     }
     len
+}
+
+
+// https://github.com/williamfiset
+// Add infinite edge logic
+pub fn tsp_dyn_new(m: &Matrix) -> isize {
+    let size= m.vertices;
+    let exp = 2_usize.checked_pow(size as u32).expect("Problem too big");
+    let mut aux_mat: Vec<Vec<Option<isize>>> = vec![vec![None; exp]; size];
+    
+    // Store first distances; from ver 0 to each one
+    for i in 1..size {
+        let x = 1 << 0 | 1 << i;
+        aux_mat[i][x] = Some(m.matrix[0][i]);
+    }
+
+    for i in 3 ..= size {
+        println!("----- {size}, {i}");
+        for sets in dyn_perms(size, i) {
+            // checks if value x is part of the set (sets & (1 << x)) == 1, 
+            // so (sets & (1 << x)) == 0 checks if x is not part of the set
+            if (sets & (1 << 0)) == 0 {
+                continue;
+            }
+            for next in 0..size {
+                if next == 0 || (sets & (1 << next)) == 0 {
+                    continue;
+                }
+                let mask = sets ^ (1 << next);
+                let mut dist = isize::MAX;
+                for end in 0..size {
+                    if end == next || end == 0 || (sets & (1 << end)) == 0 {
+                        continue;
+                    }
+                    let d = aux_mat[end][mask].unwrap() + m.matrix[end][next];
+                    if d < dist {
+                        dist = d;
+                    }
+                }
+                aux_mat[next][sets] = Some(dist);
+            }
+        }
+    }
+
+    let finish = (1 << size) - 1;
+    let mut min_dist = isize::MAX;
+
+    for i in 1..size {
+        let cost = aux_mat[i][finish].unwrap() + m.matrix[i][0];
+        if cost < min_dist {
+            min_dist = cost;
+        }
+    }
+
+    min_dist
+}
+
+fn dyn_perms(size: usize, ones: usize) -> Vec<usize> {
+     /* 
+        TL;DR
+        | - or
+        & - and
+        ^ - xor
+        << - bit shift to the left (pow)
+        >> - bit shift to the right (root)
+      */
+    let mut vec = vec![];
+    // Smallest one:
+    let mut target = (1 << ones) - 1;
+    vec.push(target);
+
+    'outer: loop {
+        let mut p = 0;
+        while p < size - 1 && ((target & (1 << (p + 1))) >> (p + 1)) >= ((target & (1 << (p))) >> (p)) {
+            p += 1;
+        }
+
+        // Check if last
+        if p == size - 1{
+            break 'outer;
+        }
+        target |= 1 << (p + 1);
+
+        for swap in 0.. (p + 1) {
+            if (target & (1 << swap)) >> swap == 1 {
+                target ^= 1 << swap;
+                break;
+            }
+        }
+
+        let mut end: usize = 0;
+        while p > end {
+            
+            if ((target & (1 << end)) >> end) ^ ((target & (1 << p)) >> p) == 1 {
+                target ^= 1 << end;
+                target ^= 1 << p;
+            }
+            end += 1;
+            p -= 1;
+        }
+        vec.push(target);
+    }
+    vec
 }
 
 pub fn print_all_permutations(vec_size: usize) -> usize {
@@ -178,7 +281,7 @@ fn std_update_vector(vec: Vec<usize>, vertices: usize) -> Vec<usize> {
         let val = vec[vertices - i];
         //println!("{}", val + add);
         while val + add < vertices {
-            if !check_if_exist_in_vec(&vec[0 .. vertices - i], val + add) {
+            if !crate::check_if_exist_in_vec(&vec[0 .. vertices - i], val + add) {
                 pos = vertices - i;
                 break 'outer;
             }
@@ -207,15 +310,6 @@ fn std_update_vector(vec: Vec<usize>, vertices: usize) -> Vec<usize> {
         vec[i] = min;
     }
     vec
-}
-
-fn check_if_exist_in_vec(vec: &[usize], val: usize) -> bool {
-    for i in vec.iter(){
-        if *i == val{
-            return true;
-        }
-    }
-    return false;
 }
 
 /*fn std_update_vector(vec: Vec<usize>, vertices: usize) -> Result<Vec<usize>, &'static str> { // CHANGE IT. WRONG ORDER. CHECK FROM BEHIND
@@ -297,6 +391,6 @@ mod testing {
     #[test]
     fn test_vec_slice(){
         let vec = vec![2, 1, 2, 3, 4];
-        assert_eq!(true, check_if_exist_in_vec(&vec[0.. 2], 2))
+        assert_eq!(true, crate::check_if_exist_in_vec(&vec[0.. 2], 2))
     }
 }
