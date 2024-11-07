@@ -3,11 +3,12 @@ use factorial::Factorial;
 use super::Matrix;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TSP_Data{
     length: isize,
     target: usize,
-    vertices: Vec<usize>
+    vertices: Vec<usize>,
+    real_vertices: Vec<usize>
 }
 
 impl TSP_Data {
@@ -27,7 +28,7 @@ impl TSP_Data {
     }
 }
 
-pub fn tsp_standard(matrix: &Matrix) -> Result<(Vec<usize>, usize), &'static str> {
+pub fn tsp_standard(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //-----------------------------------------------------------
     // Variables
     let max_factorial:u128 = (matrix.vertices as u128 - 1 ).factorial();
     let mut permutation_nr: u128 = 0;
@@ -38,7 +39,7 @@ pub fn tsp_standard(matrix: &Matrix) -> Result<(Vec<usize>, usize), &'static str
     // Output
     let mut answ_vec: Vec<usize> = vec![0; m_vert];
     let mut answ_dist = usize::MAX;
-    let mut answ: Result<(Vec<usize>, usize), &'static str> = Err("Can't find hamilton cycle");
+    let mut answ = None;
     // Setup test_vec
     for i in 0 .. m_vert - 1 {
         test_vec[i] = i + 1;
@@ -81,14 +82,15 @@ pub fn tsp_standard(matrix: &Matrix) -> Result<(Vec<usize>, usize), &'static str
         permutation_nr += 1;
     }
     if test_answ_check {
-        answ = Ok((answ_vec, answ_dist));
+        answ = Some((answ_vec, answ_dist));
     }
     answ
 }
 
-pub fn tsp_dyn(matrix: &Matrix) -> Option<usize> {
-    let mut mem_vec: Vec<TSP_Data> = vec![];
-    let mut perm_vec = vec![];
+pub fn tsp_dyn(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //--------------------------------------------------------------------------------------------
+    let mut mem_vec: Vec<Vec<TSP_Data>> = vec![vec![]; matrix.vertices];
+    let mut perm_vec: Vec<usize> = vec![];
+    let mut answ_vec: Vec<usize> = vec![];
     let mut distance = usize::MAX;
     // Setup vertices vec
     for i in 1..matrix.vertices {
@@ -97,29 +99,36 @@ pub fn tsp_dyn(matrix: &Matrix) -> Option<usize> {
     for i in 1..matrix.vertices {
         println!("Now checing vert {i}");
         let id = tsp_dyn_main(matrix, i, perm_vec.clone(), &mut mem_vec);
-        let d = mem_vec[id].length + matrix.matrix[i][0];
-        if (d as usize) < distance {distance = d as usize;}
+        let d = mem_vec[perm_vec.len() - 1][id].length + matrix.matrix[i][0];
+        if (d as usize) < distance {
+            distance = d as usize;
+            answ_vec = mem_vec[perm_vec.len() - 1][id].real_vertices.clone();
+            answ_vec.push(i);
+        }
     }
+    answ_vec.push(0);
     if distance != usize::MAX {
-        Some(distance)
+        Some((answ_vec, distance))
     }
     else {
         None
     }
 }
 
-fn tsp_dyn_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &mut Vec<TSP_Data>) -> usize {
+fn tsp_dyn_main(matrix: &Matrix, target: usize, perm_vec: Vec<usize>, mem_vec: &mut Vec<Vec<TSP_Data>>) -> usize {
     // Setup
+    #[allow(unused_assignments)]
     let mut len = 0;
+    let vec_size = perm_vec.len() - 1;
     let mut tsp_data = TSP_Data {
         target: target,
         vertices: perm_vec.clone(),
+        real_vertices: vec![],
         length: 0
     };
-
     // Memorization
-    for data in 0..mem_vec.len() {
-        if mem_vec[data].is_the_same(target, perm_vec.clone()) {
+    for data in 0..mem_vec[vec_size].len() {
+        if mem_vec[vec_size][data].is_the_same(target, perm_vec.clone()) {
             return data as usize;
         }
     }
@@ -127,8 +136,8 @@ fn tsp_dyn_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &m
     // Check if last
     if perm_vec.len() == 1{
         tsp_data.length = matrix.matrix[0][target];
-        mem_vec.push(tsp_data);
-        len = mem_vec.len() as usize - 1;
+        mem_vec[0].push(tsp_data);
+        len = mem_vec[0].len() as usize - 1;
     }
     else {
         let mut distance = isize::MAX;
@@ -142,12 +151,16 @@ fn tsp_dyn_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &m
         // Test
         for new_target in buff_vec.iter() {
             let id = tsp_dyn_main(matrix, *new_target, buff_vec.clone(), mem_vec);
-            let d = mem_vec[id].length + matrix.matrix[*new_target][target];
-            if d < distance {distance = d;}
+            let d = mem_vec[vec_size - 1][id].length + matrix.matrix[*new_target][target];
+            if d < distance {
+                distance = d;
+                tsp_data.real_vertices = mem_vec[vec_size - 1][id].real_vertices.clone();
+                tsp_data.real_vertices.push(*new_target);
+            }
         }
         tsp_data.length = distance;
-        mem_vec.push(tsp_data);
-        len = mem_vec.len() - 1;
+        mem_vec[vec_size].push(tsp_data);
+        len = mem_vec[vec_size].len() - 1;
     }
     len
 }
@@ -155,7 +168,7 @@ fn tsp_dyn_main(matrix: &Matrix,target: usize, perm_vec: Vec<usize>, mem_vec: &m
 
 // https://github.com/williamfiset
 // Add infinite edge logic
-pub fn tsp_dyn_new(m: &Matrix) -> isize {
+pub fn tsp_dyn_new(m: &Matrix) -> isize { //---------------------------------------------------------------------------------------------------
     let size= m.vertices;
     let exp = 2_usize.checked_pow(size as u32).expect("Problem too big");
     let mut aux_mat: Vec<Vec<Option<isize>>> = vec![vec![None; exp]; size];
@@ -184,7 +197,16 @@ pub fn tsp_dyn_new(m: &Matrix) -> isize {
                     if end == next || end == 0 || (sets & (1 << end)) == 0 {
                         continue;
                     }
-                    let d = aux_mat[end][mask].unwrap() + m.matrix[end][next];
+                    // check if path exists
+                    let path_prev = match aux_mat[end][mask] {
+                        Some(x) => x,
+                        None => {continue;}
+                    };
+
+                    let path_next = m.matrix[end][next];
+                    if path_next <= 0 {continue;}
+
+                    let d = path_prev + path_next;
                     if d < dist {
                         dist = d;
                     }

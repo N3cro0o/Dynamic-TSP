@@ -8,23 +8,19 @@ use std::{fs, io::{self, Write}};
 
 pub fn console_create_matrix_from_density() -> Matrix {
     println!("Vertices:");
-    let ver = console_read_usize();
+    let ver = match console_read_usize(){
+        Ok(x) => x,
+        Err(_) => {
+            return Matrix::default();
+        }
+    };
     println!("Density:");
-    let dens = console_read_f32();
-    // Check if correct data
-    let ver = match ver{
+    let dens = match console_read_f32(){
         Ok(x) => x,
         Err(_) => {
             return Matrix::default();
         }
-    };
-    let dens = match dens{
-        Ok(x) => x,
-        Err(_) => {
-            return Matrix::default();
-        }
-    };
-    
+    };   
     // Check if correct values
     if ver <= 0 {println!("Wrong vertices value. Must be larger than 0."); return Matrix::default();}
     if dens < 0.0 || dens > 1.0 {println!("Wrong density value. Must be between 0 and 1."); return Matrix::default();}
@@ -191,7 +187,7 @@ fn console_read_usize() -> Result<usize, &'static str> {
         Ok(x) => x,
         Err(err) => {
             println!("{err}");
-            0
+            return Err("Wrong input");
         }
     };
     Ok(x)
@@ -208,10 +204,26 @@ fn console_read_f32() -> Result<f32, &'static str> {
         Ok(x) => x,
         Err(err) => {
             println!("{err}");
-            0.0
+            return Err("Wrong input");
         }
     };
     Ok(x)
+}
+
+pub fn clear_output_file() -> Result<(), io::Error> {
+    fs::remove_file("output.txt")?;
+    Ok(())
+}
+
+pub fn store_test_data_in_file(num: usize, dist: usize, vec: Vec<usize>, time: Option<std::time::Duration>, method: &str) -> Result<(), io::Error> {
+    let mut file = fs::OpenOptions::new().create(true).write(true).append(true).open("output.txt").unwrap();
+    let real_time = match time{
+        Some(x) => x.as_nanos(),
+        None => 0
+    };
+    file.write(format!("{};{};{};{:?};{}\n", num, method, real_time, vec, dist).as_bytes())?;
+    //write!(&mut file, "{};{};{};{:?};{}\n", num, method, real_time, vec, dist)?;
+    Ok(())
 }
 
 #[cfg(test)]
