@@ -168,7 +168,7 @@ fn tsp_dyn_main(matrix: &Matrix, target: usize, perm_vec: Vec<usize>, mem_vec: &
 
 // https://github.com/williamfiset
 // Add infinite edge logic
-pub fn tsp_dyn_new(m: &Matrix) -> isize { //---------------------------------------------------------------------------------------------------
+pub fn tsp_dyn_new(m: &Matrix) -> Option<(Vec<usize>, usize)> { //---------------------------------------------------------------------------------------------------
     let size= m.vertices;
     let exp = 2_usize.checked_pow(size as u32).expect("Problem too big");
     let mut aux_mat: Vec<Vec<Option<isize>>> = vec![vec![None; exp]; size];
@@ -179,6 +179,7 @@ pub fn tsp_dyn_new(m: &Matrix) -> isize { //------------------------------------
         aux_mat[i][x] = Some(m.matrix[0][i]);
     }
 
+    // Find the path
     for i in 3 ..= size {
         println!("----- {size}, {i}");
         for sets in dyn_perms(size, i) {
@@ -202,7 +203,6 @@ pub fn tsp_dyn_new(m: &Matrix) -> isize { //------------------------------------
                         Some(x) => x,
                         None => {continue;}
                     };
-
                     let path_next = m.matrix[end][next];
                     if path_next <= 0 {continue;}
 
@@ -215,10 +215,10 @@ pub fn tsp_dyn_new(m: &Matrix) -> isize { //------------------------------------
             }
         }
     }
-
     let finish = (1 << size) - 1;
     let mut min_dist = isize::MAX;
 
+    // Cost
     for i in 1..size {
         let cost = aux_mat[i][finish].unwrap() + m.matrix[i][0];
         if cost < min_dist {
@@ -226,7 +226,34 @@ pub fn tsp_dyn_new(m: &Matrix) -> isize { //------------------------------------
         }
     }
 
-    min_dist
+    // Path vector
+    let mut prev = 0;
+    let mut state: usize = (1 << size) - 1;
+    let mut path_vec = vec![0; size];
+
+    for i in (1..size).rev() {
+        let mut index = 0;
+
+        for j in 1..size {
+            if state & (1 << j) == 0 { continue; }
+            if index == 0 {
+                index = j;
+            }
+
+            let prev_d = aux_mat[index][state].unwrap() + m.matrix[index][prev];
+            let new_d = aux_mat[j][state].unwrap() + m.matrix[j][prev];
+            if new_d < prev_d {
+                index = j;
+            }
+        }
+
+        path_vec[i - 1] = index;
+        state ^= 1 << index;
+        prev = index;
+    }
+
+    if min_dist < 0 {None}
+    else {Some((path_vec, min_dist as usize))}
 }
 
 fn dyn_perms(size: usize, ones: usize) -> Vec<usize> {

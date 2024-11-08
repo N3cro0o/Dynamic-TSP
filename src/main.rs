@@ -1,7 +1,7 @@
 use dyn_prog::{io, tsp, Matrix};
 use std::time::{Duration, SystemTime};
 
-const TEST_SIZE: [usize; 5] = [8, 10, 12, 14, 15];
+const TEST_SIZE: [usize; 6] = [5, 10, 12, 13, 14, 15];
 
 fn main() {
     /*
@@ -121,18 +121,23 @@ fn main() {
 
             5 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
-
                 let dist;
+                let vec;
                 let start_timestamp = SystemTime::now();
-                dist = dyn_prog::tsp::tsp_dyn_new(&main_matrix);
+                (vec, dist) = dyn_prog::tsp::tsp_dyn_new(&main_matrix).unwrap();
                 let end_timestamp = SystemTime::now();
                 let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
-                println!("Dist = {dist}");
+                println!("Dist = {dist}, vec = {vec:?}");
                 println!("Time {}", dur.as_secs_f64());
             }
             10 => {
-                let mut vec: Vec<usize>;
-                let mut dist: usize;
+                let mut vec_n: Vec<usize>;
+                let mut vec_p: Vec<usize>;
+                let mut vec_d: Vec<usize>;
+                let mut dist_n: usize;
+                let mut dist_p: usize;
+                let mut dist_d: usize;
+
                 let mut naive: Option<Duration> = None;
                 let mut worse: Option<Duration> = None;
                 let mut dynamic: Option<Duration> = None;
@@ -144,39 +149,65 @@ fn main() {
                 std::io::stdin().read_line(&mut input_buff).expect("Something wrong");
                 let x = input_buff.trim().parse::<usize>().expect("Should be a number");
 
-                for num in TEST_SIZE {
-                    println!("{num}");
+                'test: for num in TEST_SIZE {
+                    println!("----------------------| {num} |-------------------------");
                     for _ in 0..x {
                         naive = None;
                         worse = None;
                         dynamic = None;
                         main_matrix = Matrix::new_with_density(num, 1.0).randomize();
-                        // naive only to max 13
-                        if num < 13 {
-                            start_time = SystemTime::now();
-                            (vec, dist) = match tsp::tsp_standard(&main_matrix) {
-                                Some(tup) => tup,
-                                None => (vec![usize::MAX], usize::MAX)
-                            };
-                            end_time = SystemTime::now();
-                            naive = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                            io::store_test_data_in_file(num, dist, vec.clone(), naive, "naive").unwrap();
-                        }
+                        
                         // my take
                         start_time = SystemTime::now();
-                        (vec, dist) = match tsp::tsp_dyn(&main_matrix) {
+                        (vec_p, dist_p) = match tsp::tsp_dyn(&main_matrix) {
                             Some(tup) => tup,
                             None => (vec![usize::MAX], usize::MAX)
                         };
                         end_time = SystemTime::now();
                         worse = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file(num, dist, vec.clone(), worse, "personal take").unwrap();
+                        io::store_test_data_in_file(num, dist_p, vec_p.clone(), worse, "dyn_struct").unwrap();
+
                         // dynamic
                         start_time = SystemTime::now();
-                        (dist) = tsp::tsp_dyn_new(&main_matrix) as usize;
+                        (vec_d, dist_d) = match tsp::tsp_dyn_new(&main_matrix){
+                            Some(tup) => tup,
+                            None => (vec![usize::MAX], usize::MAX)
+                        };
                         end_time = SystemTime::now();
                         dynamic = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file(num, dist, vec.clone(), dynamic, "held-karp").unwrap();
+                        io::store_test_data_in_file(num, dist_d, vec_d.clone(), dynamic, "dyn_held-karp").unwrap();
+
+                        // naive only to max 13
+                        if num <= 13 {
+                            start_time = SystemTime::now();
+                            (vec_n, dist_n) = match tsp::tsp_standard(&main_matrix) {
+                                Some(tup) => tup,
+                                None => (vec![usize::MAX], usize::MAX)
+                            };
+                            end_time = SystemTime::now();
+                            naive = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                            io::store_test_data_in_file(num, dist_n, vec_n.clone(), naive, "naive").unwrap();
+                        }
+                        else {
+                            vec_n = vec_p.clone();
+                            dist_n = dist_p;
+                        }
+                        
+                        // Test
+                        if dist_p != dist_d || dist_p != dist_n || dist_d != dist_n {
+                            println!("Distance error");
+                            break 'test;
+                        }
+
+                        // Don't check path vectors, because multiple cycles can exist with different paths
+                        if !vec_check(&main_matrix, &vec_n, dist_n) || !vec_check(&main_matrix, &vec_p, dist_p) ||
+                            !vec_check(&main_matrix, &vec_d, dist_d) {
+                            println!("Path error");
+                            break 'test;
+                        }
+
+                        // But we can check if the path is correct
+
                     }
                 }
             }
@@ -200,4 +231,14 @@ fn main() {
             }
         };
     }
+}
+
+fn vec_check(m: &Matrix, vec: &Vec<usize>, dist: usize) -> bool {
+    let mut d = 0;
+    let mut last = 0;
+    for i in vec.iter(){
+        d += m.matrix[last][*i] as usize;
+        last = *i;
+    }
+    dist == d
 }
