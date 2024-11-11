@@ -4,24 +4,6 @@ use std::time::SystemTime;
 const TEST_SIZE: [usize; 6] = [5, 10, 12, 13, 14, 15];
 
 fn main() {
-    /*
-        let matrix = io::console_create_matrix_from_density().randomize();
-        let vec;
-        let dist;
-        matrix.print_matrix();
-        let start_timestamp = SystemTime::now();
-        (vec, dist) = match tsp::tsp_standard(&matrix) {
-            Ok((x, y)) => (x,y),
-            Err(err) => {
-                println!("Error! {err}");
-                return;
-            }
-        };
-        let end_timestamp = SystemTime::now();
-        let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
-        println!("Dist = {dist}, vec = {vec:?}");
-        println!("Time {}", dur.as_secs_f64());
-    */
     let mut main_matrix = Matrix::empty();
     let mut vec = vec![0];
     let mut dist = 0;

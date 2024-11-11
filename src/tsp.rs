@@ -406,47 +406,6 @@ fn std_update_vector(vec: Vec<usize>, vertices: usize) -> Vec<usize> {
     vec
 }
 
-/*fn std_update_vector(vec: Vec<usize>, vertices: usize) -> Result<Vec<usize>, &'static str> { // CHANGE IT. WRONG ORDER. CHECK FROM BEHIND
-    // Variables
-    let mut pos = 0; // Change position
-    let mut vec = vec;
-
-    // Check if valid
-    match vec.get(0) {
-        Some(x) => {
-            if *x >= vertices {return Err("All permutations done");}
-        }
-        None => {return Err("0 size vector");}
-    }
-
-    // Check for position
-    for i in vertices - 1 ..= 0 {
-
-
-        if vec[i] + 1 >= vertices {
-            pos = i;
-            break;
-        }
-    }
-
-    // Update vec
-    vec[pos] += 1;
-    for i in pos..vertices {
-        // Find next valid value 
-        let mut d = 0;
-        'inner: loop {
-            let mut repeat_check = false;
-            for j in 0..i{
-                if vec[j] == d {repeat_check = true;}
-            }
-            if !repeat_check {break 'inner;}
-            d += 1;
-        }
-    }
-    
-    Ok(vec)
-}*/
-
 #[cfg(test)]
 mod testing {
     use super::*;

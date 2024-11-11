@@ -1,11 +1,6 @@
 use super::Matrix;
 use std::{fs, io::{self, Write}};
 
-/*
-    TO DO
-    4. create_matrix_form_file no path argument logic
-*/
-
 pub fn console_create_matrix_from_density() -> Matrix {
     println!("Vertices:");
     let ver = match console_read_usize(){
@@ -223,7 +218,6 @@ pub fn store_test_data_in_file(num: usize, dist: usize, vec: Vec<usize>, time: O
         None => 0
     };
     file.write(format!("{};{};{};{:?};{}\n", num, method, real_time, vec, dist).as_bytes())?;
-    //write!(&mut file, "{};{};{};{:?};{}\n", num, method, real_time, vec, dist)?;
     Ok(())
 }
 
@@ -244,10 +238,4 @@ mod test {
         let first_line = file.lines().next().unwrap();
         assert_eq!((21, 3), read_first_line(first_line))
     }
-
-    /*#[test]
-    fn test_write_file(){
-        let m = Matrix::default().randomize();
-        save_matrix_to_file(&m).unwrap();
-    }*/
 }
