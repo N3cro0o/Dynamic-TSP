@@ -1,5 +1,5 @@
 use dyn_prog::{io, tsp, Matrix};
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 const TEST_SIZE: [usize; 6] = [5, 10, 12, 13, 14, 15];
 
@@ -23,6 +23,8 @@ fn main() {
         println!("Time {}", dur.as_secs_f64());
     */
     let mut main_matrix = Matrix::empty();
+    let mut vec = vec![0];
+    let mut dist = 0;
     'main: loop {
         // Setup
         let mut input_buff = String::new();
@@ -32,8 +34,8 @@ fn main() {
         {
             println!("--------------------------------------------------------------------------");
             println!("Wilkommen to über TSP program! Please select desired komiwojażer option!");
-            println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Brute-force TSP.\n4.  Worse dynamic TSP\n5.  Dynamic TSP");
-            println!("10. Stress test\n11. Delete output file\n\nInputting anything else will close the application");
+            println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n4.  Brute-force TSP.\n5.  Worse dynamic TSP\n6.  Dynamic TSP");
+            println!("7.  Check generated path.\n10. Stress test\n11. Delete output file\n\nAnything else will close the application");
             println!();
         }
 
@@ -63,19 +65,6 @@ fn main() {
                 main_matrix = io::console_create_matrix_from_density().randomize();
             }
 
-            // 101 => { // Old read function from file
-            //     println!("Input directory path to the file. Can be local or global.");
-            //     input_buff.clear();
-            //     let path: Option<&str> = match std::io::stdin().read_line(&mut input_buff) {
-            //         Ok(_) => Some(&input_buff.trim()),
-            //         Err(err) => {
-            //             println!("{err}");
-            //             None
-            //         }
-            //     };
-            //     main_matrix = io::create_matrix_from_file(path).unwrap();
-            // }
-
             2 => {
                 println!("Input directory path to the file. Can be local or global.");
                 input_buff.clear();
@@ -91,9 +80,15 @@ fn main() {
             }
 
             3 => {
+                println!("Number larger than 0");
+                input_buff.clear();
+                std::io::stdin().read_line(&mut input_buff).expect("Wrong value");
+                let num = input_buff.trim().parse::<usize>().unwrap();
+                println!("{}", tsp::print_all_permutations(num));
+            }
+
+            4 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
-                let vec;
-                let dist;
                 let start_timestamp = SystemTime::now();
                 (vec, dist) = match tsp::tsp_standard(&main_matrix) {
                     Some((x, y)) => (x,y),
@@ -107,10 +102,9 @@ fn main() {
                 println!("Dist = {dist}, vec = {vec:?}");
                 println!("Time {}", dur.as_secs_f64());
             }
-            4 => {
+
+            5 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
-                let dist;
-                let vec;
                 let start_timestamp = SystemTime::now();
                 (vec, dist) = tsp::tsp_dyn(&main_matrix).unwrap();
                 let end_timestamp = SystemTime::now();
@@ -119,10 +113,8 @@ fn main() {
                 println!("Time {}", dur.as_secs_f64());
             }
 
-            5 => {
+            6 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
-                let dist;
-                let vec;
                 let start_timestamp = SystemTime::now();
                 (vec, dist) = dyn_prog::tsp::tsp_dyn_new(&main_matrix).unwrap();
                 let end_timestamp = SystemTime::now();
@@ -130,6 +122,22 @@ fn main() {
                 println!("Dist = {dist}, vec = {vec:?}");
                 println!("Time {}", dur.as_secs_f64());
             }
+
+            7 => {
+                if main_matrix.check_cycle(&vec, dist) {
+                    println!("Everything is fine.")
+                }
+                else {
+                    let mut d = 0;
+                    let mut last = 0;
+                    for i in vec.iter(){
+                        d += main_matrix.matrix[last][*i] as usize;
+                        last = *i;
+                    }
+                    println!("{d} in not the same as {dist}");
+                }
+            }
+
             10 => {
                 let mut vec_n: Vec<usize>;
                 let mut vec_p: Vec<usize>;
@@ -138,9 +146,6 @@ fn main() {
                 let mut dist_p: usize;
                 let mut dist_d: usize;
 
-                let mut naive: Option<Duration> = None;
-                let mut worse: Option<Duration> = None;
-                let mut dynamic: Option<Duration> = None;
                 let mut start_time: SystemTime;
                 let mut end_time: SystemTime;
 
@@ -152,9 +157,6 @@ fn main() {
                 'test: for num in TEST_SIZE {
                     println!("----------------------| {num} |-------------------------");
                     for _ in 0..x {
-                        naive = None;
-                        worse = None;
-                        dynamic = None;
                         main_matrix = Matrix::new_with_density(num, 1.0).randomize();
                         
                         // my take
@@ -164,7 +166,7 @@ fn main() {
                             None => (vec![usize::MAX], usize::MAX)
                         };
                         end_time = SystemTime::now();
-                        worse = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        let worse = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
                         io::store_test_data_in_file(num, dist_p, vec_p.clone(), worse, "dyn_struct").unwrap();
 
                         // dynamic
@@ -174,7 +176,7 @@ fn main() {
                             None => (vec![usize::MAX], usize::MAX)
                         };
                         end_time = SystemTime::now();
-                        dynamic = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        let dynamic = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
                         io::store_test_data_in_file(num, dist_d, vec_d.clone(), dynamic, "dyn_held-karp").unwrap();
 
                         // naive only to max 13
@@ -185,7 +187,7 @@ fn main() {
                                 None => (vec![usize::MAX], usize::MAX)
                             };
                             end_time = SystemTime::now();
-                            naive = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                            let naive = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
                             io::store_test_data_in_file(num, dist_n, vec_n.clone(), naive, "naive").unwrap();
                         }
                         else {
@@ -200,14 +202,11 @@ fn main() {
                         }
 
                         // Don't check path vectors, because multiple cycles can exist with different paths
-                        if !vec_check(&main_matrix, &vec_n, dist_n) || !vec_check(&main_matrix, &vec_p, dist_p) ||
-                            !vec_check(&main_matrix, &vec_d, dist_d) {
+                        if !main_matrix.check_cycle(&vec_n, dist_n) || !main_matrix.check_cycle(&vec_p, dist_p) ||
+                            !main_matrix.check_cycle(&vec_d, dist_d) {
                             println!("Path error");
                             break 'test;
                         }
-
-                        // But we can check if the path is correct
-
                     }
                 }
             }
@@ -218,27 +217,9 @@ fn main() {
                 }
             }
 
-            // 20 => {
-            //     println!("Number larger than 0");
-            //     input_buff.clear();
-            //     std::io::stdin().read_line(&mut input_buff).expect("Wrong value");
-            //     let num = input_buff.trim().parse::<usize>().unwrap();
-            //     println!("{}", tsp::print_all_permutations(num));
-            // }
-
             _ => {
                 break 'main;
             }
         };
     }
-}
-
-fn vec_check(m: &Matrix, vec: &Vec<usize>, dist: usize) -> bool {
-    let mut d = 0;
-    let mut last = 0;
-    for i in vec.iter(){
-        d += m.matrix[last][*i] as usize;
-        last = *i;
-    }
-    dist == d
 }

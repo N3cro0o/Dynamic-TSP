@@ -127,8 +127,9 @@ pub fn create_matrix_form_file_matrix(path: Option<&str>) -> Result<Matrix, &'st
                 buff_string.clear();
             }
         }
-        // The last edge cannot be added in inner loop, so we do this here. But its [x, y] x == y, so just push 0
-        m_out.push_edge(x, y, 0);
+        // The last edge cannot be added in inner loop, so we do this here.
+        let val = buff_string.trim().parse().unwrap();
+        m_out.push_edge(x, y, val);
         buff_string.clear();
         x += 1;
     }

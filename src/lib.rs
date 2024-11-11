@@ -139,6 +139,17 @@ impl Matrix {
     pub fn is_empty(&self) -> bool {
         self.vertices == 0
     }
+
+    pub fn check_cycle(&self, vec: &Vec<usize>, dist: usize) -> bool {
+        let mut d = 0;
+        let mut last = 0;
+        for i in vec.iter(){
+            if self.matrix[last][*i] < 0 {return false}
+            d += self.matrix[last][*i] as usize;
+            last = *i;
+        }
+        dist == d
+    }
 }
 
 pub fn check_if_exist_in_vec(vec: &[usize], val: usize) -> bool {
