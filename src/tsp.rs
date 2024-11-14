@@ -28,11 +28,11 @@ impl TSP_Data {
     }
 }
 
-pub fn tsp_standard(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //-----------------------------------------------------------
+pub fn tsp_standard(m: &Matrix) -> Option<(Vec<usize>, usize)> { //-----------------------------------------------------------
     // Variables
-    let max_factorial:u128 = (matrix.vertices as u128 - 1 ).factorial();
+    let max_factorial:u128 = (m.vertices as u128 - 1 ).factorial();
     let mut permutation_nr: u128 = 0;
-    let m_vert = matrix.vertices;
+    let m_vert = m.vertices;
     let mut test_vec: Vec<usize> = vec![0; m_vert]; // Store current path
     let mut test_answ_check = false;
     
@@ -52,6 +52,7 @@ pub fn tsp_standard(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //--------
             let percent = permutation_nr as f64 / max_factorial as f64 * 100.0;
             println!("Current -> {percent}% done");
         }
+
         // Test to end the 'lst loop
         if *test_vec.get(0).unwrap() == m_vert {break 'lst;}
 
@@ -62,11 +63,11 @@ pub fn tsp_standard(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //--------
         // Read permutation
         for i in test_vec.iter() {
             // Check if path exsts. If not, get new permutation
-            if matrix.matrix[test_last][*i] <= 0 {
+            if m.matrix[test_last][*i] <= 0 {
                 test_vec = std_update_vector(test_vec, m_vert);
                 continue 'lst;
             }
-            test_dist += matrix.matrix[test_last][*i] as usize;
+            test_dist += m.matrix[test_last][*i] as usize;
             test_last = *i;
         }
 
@@ -87,23 +88,27 @@ pub fn tsp_standard(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //--------
     answ
 }
 
-pub fn tsp_dyn(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //--------------------------------------------------------------------------------------------
-    let mut mem_vec: Vec<Vec<TSP_Data>> = vec![vec![]; matrix.vertices];
+pub fn tsp_dyn(m: &Matrix) -> Option<(Vec<usize>, usize)> { //--------------------------------------------------------------------------------------------
+    let mut mem_vec: Vec<Vec<TSP_Data>> = vec![vec![]; m.vertices];
     let mut perm_vec: Vec<usize> = vec![];
     let mut answ_vec: Vec<usize> = vec![];
     let mut distance: isize = -1;
+
     // Setup vertices vec
-    for i in 1..matrix.vertices {
+    for i in 1..m.vertices {
         perm_vec.push(i);
     }
-    for i in 1..matrix.vertices {
+
+    for i in 1..m.vertices {
         println!("Now checing vert {i}");
-        let id = tsp_dyn_main(matrix, i, perm_vec.clone(), &mut mem_vec);
+        let id = tsp_dyn_main(m, i, perm_vec.clone(), &mut mem_vec);
         let id_dist = mem_vec[perm_vec.len() - 1][id].length;
-        let next_dist = matrix.matrix[i][0];
+        let next_dist = m.matrix[i][0];
+
         // Check if prev path and cycle exist
         if id_dist <= 0 { continue; }
         if next_dist <= 0 { continue; }
+
         let d = id_dist + next_dist;
         if d < distance || distance == -1 {
             distance = d;
@@ -111,6 +116,7 @@ pub fn tsp_dyn(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //-------------
             answ_vec.push(i);
         }
     }
+
     answ_vec.push(0);
     if distance != -1 {
         Some((answ_vec, distance as usize))
@@ -120,7 +126,7 @@ pub fn tsp_dyn(matrix: &Matrix) -> Option<(Vec<usize>, usize)> { //-------------
     }
 }
 
-fn tsp_dyn_main(matrix: &Matrix, target: usize, perm_vec: Vec<usize>, mem_vec: &mut Vec<Vec<TSP_Data>>) -> usize {
+fn tsp_dyn_main(m: &Matrix, target: usize, perm_vec: Vec<usize>, mem_vec: &mut Vec<Vec<TSP_Data>>) -> usize {
     // Setup
     #[allow(unused_assignments)]
     let mut len = 0;
@@ -141,12 +147,13 @@ fn tsp_dyn_main(matrix: &Matrix, target: usize, perm_vec: Vec<usize>, mem_vec: &
 
     // Check if last
     if perm_vec.len() == 1{
-        tsp_data.length = matrix.matrix[0][target];
+        tsp_data.length = m.matrix[0][target];
         mem_vec[0].push(tsp_data);
         len = mem_vec[0].len() as usize - 1;
     }
     else {
         let mut distance = -1;
+
         // Create new vec
         let mut buff_vec = vec![];
         for j in perm_vec.iter() {
@@ -154,11 +161,12 @@ fn tsp_dyn_main(matrix: &Matrix, target: usize, perm_vec: Vec<usize>, mem_vec: &
             if *j == target {continue;}
             buff_vec.push(*j);
         }
+
         // Test
         for new_target in buff_vec.iter() {
-            let id = tsp_dyn_main(matrix, *new_target, buff_vec.clone(), mem_vec);
+            let id = tsp_dyn_main(m, *new_target, buff_vec.clone(), mem_vec);
             let id_dist = mem_vec[vec_size - 1][id].length;
-            let next_dist = matrix.matrix[*new_target][target];
+            let next_dist = m.matrix[*new_target][target];
 
             if id_dist <= 0 { continue; } // If prev path doesn't exit, continue to the next iteration
             if next_dist <= 0 { continue; } // If prev path doesn't exit, continue to the next iteration
@@ -170,6 +178,7 @@ fn tsp_dyn_main(matrix: &Matrix, target: usize, perm_vec: Vec<usize>, mem_vec: &
                 tsp_data.real_vertices.push(*new_target);
             }
         }
+        
         tsp_data.length = distance;
         mem_vec[vec_size].push(tsp_data);
         len = mem_vec[vec_size].len() - 1;

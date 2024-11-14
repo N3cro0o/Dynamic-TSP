@@ -15,7 +15,7 @@ fn main() {
         // Menu text
         {
             println!("--------------------------------------------------------------------------");
-            println!("Wilkommen to über TSP program! Please select desired komiwojażer option!");
+            println!("Welcome to TSP program! Please select one of the options below");
             println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n4.  Brute-force TSP.\n5.  Worse dynamic TSP\n6.  Dynamic TSP");
             println!("7.  Check generated path.\n10. Stress test\n11. Delete output file\n\nAnything else will close the application");
             println!();
