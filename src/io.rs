@@ -1,4 +1,4 @@
-use super::Matrix;
+use super::matrix::Matrix;
 use std::{fs, io::{self, Write}};
 
 pub fn console_create_matrix_from_density() -> Matrix {

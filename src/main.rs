@@ -1,10 +1,10 @@
-use dyn_prog::{io, tsp, Matrix};
+use dyn_prog::{io, tsp, matrix};
 use std::time::SystemTime;
 
 const TEST_SIZE: [usize; 6] = [5, 10, 12, 13, 14, 15];
 
 fn main() {
-    let mut main_matrix = Matrix::empty();
+    let mut main_matrix = matrix::Matrix::empty();
     let mut vec = vec![0];
     let mut dist = 0;
     'main: loop {
@@ -16,8 +16,9 @@ fn main() {
         {
             println!("--------------------------------------------------------------------------");
             println!("Welcome to TSP program! Please select one of the options below");
-            println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n4.  Brute-force TSP.\n5.  Worse dynamic TSP\n6.  Dynamic TSP");
-            println!("7.  Check generated path.\n10. Stress test\n11. Delete output file\n\nAnything else will close the application");
+            println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n11. Brute-force TSP.\n12. Worse dynamic TSP\n13. Dynamic TSP");
+            println!("14. ACO TSP");
+            println!("21. Check generated path.\n22. Stress test\n23. Delete output file\n\nAnything else will close the application");
             println!();
         }
 
@@ -69,10 +70,10 @@ fn main() {
                 println!("{}", tsp::print_all_permutations(num));
             }
 
-            4 => {
+            11 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
                 let start_timestamp = SystemTime::now();
-                (vec, dist) = match tsp::tsp_standard(&main_matrix) {
+                (vec, dist) = match tsp::naive::tsp_standard(&main_matrix) {
                     Some((x, y)) => (x,y),
                     None => {
                         println!("Error! Hamiltonian cycle doesn't exist");
@@ -85,27 +86,37 @@ fn main() {
                 println!("Time {}", dur.as_secs_f64());
             }
 
-            5 => {
+            12 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
                 let start_timestamp = SystemTime::now();
-                (vec, dist) = tsp::tsp_dyn(&main_matrix).unwrap();
+                (vec, dist) = tsp::dynamic::tsp_dyn(&main_matrix).unwrap();
                 let end_timestamp = SystemTime::now();
                 let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
                 println!("Dist = {dist}, vec = {vec:?}");
                 println!("Time {}", dur.as_secs_f64());
             }
 
-            6 => {
+            13 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
                 let start_timestamp = SystemTime::now();
-                (vec, dist) = dyn_prog::tsp::tsp_dyn_new(&main_matrix).unwrap();
+                (vec, dist) = dyn_prog::tsp::dynamic::tsp_dyn_new(&main_matrix).unwrap();
                 let end_timestamp = SystemTime::now();
                 let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
                 println!("Dist = {dist}, vec = {vec:?}");
                 println!("Time {}", dur.as_secs_f64());
             }
 
-            7 => {
+            14 => {
+                if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
+                let start_timestamp = SystemTime::now();
+                (vec, dist) = dyn_prog::tsp::aco::tsp_aco(&main_matrix).unwrap();
+                let end_timestamp = SystemTime::now();
+                let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
+                println!("Dist = {dist}, vec = {vec:?}");
+                println!("Time {}", dur.as_secs_f64());
+            }
+
+            21 => {
                 if main_matrix.check_cycle(&vec, dist) {
                     println!("Everything is fine.")
                 }
@@ -120,7 +131,7 @@ fn main() {
                 }
             }
 
-            10 => {
+            22 => {
                 let mut vec_n: Vec<usize>;
                 let mut vec_p: Vec<usize>;
                 let mut vec_d: Vec<usize>;
@@ -139,11 +150,11 @@ fn main() {
                 'test: for num in TEST_SIZE {
                     println!("----------------------| {num} |-------------------------");
                     for _ in 0..x {
-                        main_matrix = Matrix::new_with_density(num, 1.0).randomize();
+                        main_matrix = matrix::Matrix::new_with_density(num, 1.0).randomize();
                         
                         // my take
                         start_time = SystemTime::now();
-                        (vec_p, dist_p) = match tsp::tsp_dyn(&main_matrix) {
+                        (vec_p, dist_p) = match tsp::dynamic::tsp_dyn(&main_matrix) {
                             Some(tup) => tup,
                             None => (vec![usize::MAX], usize::MAX)
                         };
@@ -153,7 +164,7 @@ fn main() {
 
                         // dynamic
                         start_time = SystemTime::now();
-                        (vec_d, dist_d) = match tsp::tsp_dyn_new(&main_matrix){
+                        (vec_d, dist_d) = match tsp::dynamic::tsp_dyn_new(&main_matrix){
                             Some(tup) => tup,
                             None => (vec![usize::MAX], usize::MAX)
                         };
@@ -164,7 +175,7 @@ fn main() {
                         // naive only to max 13
                         if num <= 13 {
                             start_time = SystemTime::now();
-                            (vec_n, dist_n) = match tsp::tsp_standard(&main_matrix) {
+                            (vec_n, dist_n) = match tsp::naive::tsp_standard(&main_matrix) {
                                 Some(tup) => tup,
                                 None => (vec![usize::MAX], usize::MAX)
                             };
@@ -193,7 +204,7 @@ fn main() {
                 }
             }
 
-            11 => {
+            23 => {
                 if let Err(err) = io::clear_output_file() {
                     println!("{err}");
                 }
