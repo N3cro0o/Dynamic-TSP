@@ -22,7 +22,7 @@ pub fn tsp_standard(m: &Matrix) -> Option<(Vec<usize>, usize)> { //-------------
     // LST standard test
     'lst: loop {
         // Print percent
-        if permutation_nr % 100_000_000 == 0 {
+        if permutation_nr % 100_000_000 == 0  {
             let percent = permutation_nr as f64 / max_factorial as f64 * 100.0;
             println!("Current -> {percent}% done");
         }
@@ -35,6 +35,7 @@ pub fn tsp_standard(m: &Matrix) -> Option<(Vec<usize>, usize)> { //-------------
         let mut test_last: usize = 0;
 
         // Read permutation
+        permutation_nr += 1;
         for i in test_vec.iter() {
             // Check if path exsts. If not, get new permutation
             if m.matrix[test_last][*i] <= 0 {
@@ -54,7 +55,6 @@ pub fn tsp_standard(m: &Matrix) -> Option<(Vec<usize>, usize)> { //-------------
 
         // Update permutation
         test_vec = std_update_vector(test_vec, m_vert);
-        permutation_nr += 1;
     }
     if test_answ_check {
         answ = Some((answ_vec, answ_dist));

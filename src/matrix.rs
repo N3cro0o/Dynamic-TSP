@@ -166,15 +166,37 @@ impl Matrix {
         self.vertices == 0
     }
 
-    pub fn check_cycle(&self, vec: &Vec<usize>, dist: usize) -> bool {
+    pub fn get_cycle_length(&self, vec: &Vec<usize>) -> Option<usize> {
         let mut d = 0;
         let mut last = 0;
         for i in vec.iter(){
-            if self.matrix[last][*i] < 0 {return false}
+            if self.matrix[last][*i] < 0 {return None}
             d += self.matrix[last][*i] as usize;
             last = *i;
         }
-        dist == d
+        return Some(d);
+    }
+
+    pub fn check_length(&self, vec: &Vec<usize>, dist: usize) -> bool {
+        // Len
+        if let Some(x) = self.get_cycle_length(vec) {
+            dist == x
+        }
+        else {
+            false
+        }
+    }
+
+    pub fn check_cycle(&self, vec: &Vec<usize>) -> bool{
+        // Repeats
+        let mut repeats_vec = vec![];
+        for p in vec.iter() {
+            for i in repeats_vec.iter() {
+                if *i == *p {println!("Double vertex: {}", *p); return false;}
+            }
+            repeats_vec.push(*p);
+        }
+        true
     }
 
     pub fn get_vertex_number_vec(&self) -> Vec<usize> {

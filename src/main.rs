@@ -16,8 +16,8 @@ fn main() {
         {
             println!("--------------------------------------------------------------------------");
             println!("Welcome to TSP program! Please select one of the options below");
-            println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n11. Brute-force TSP.\n12. Worse dynamic TSP\n13. Dynamic TSP");
-            println!("14. ACO TSP");
+            println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n\n11. Brute-force TSP.\n12. Worse dynamic TSP\n13. Dynamic TSP");
+            println!("14. ACO TSP\n15. Tabu search TSP\n");
             println!("21. Check generated path.\n22. Stress test\n23. Delete output file\n\nAnything else will close the application");
             println!();
         }
@@ -116,9 +116,19 @@ fn main() {
                 println!("Time {}", dur.as_secs_f64());
             }
 
+            15 => {
+                if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
+                let start_timestamp = SystemTime::now();
+                (vec, dist) = dyn_prog::tsp::tabu::tabu_tsp(&main_matrix).unwrap();
+                let end_timestamp = SystemTime::now();
+                let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
+                println!("Dist = {dist}, vec = {vec:?}");
+                println!("Time {}", dur.as_secs_f64());
+            }
+            
             21 => {
-                if main_matrix.check_cycle(&vec, dist) {
-                    println!("Everything is fine.")
+                if main_matrix.check_length(&vec, dist) {
+                    println!("Length is fine.")
                 }
                 else {
                     let mut d = 0;
@@ -128,6 +138,13 @@ fn main() {
                         last = *i;
                     }
                     println!("{d} in not the same as {dist}");
+                }
+
+                if main_matrix.check_cycle(&vec) {
+                    println!("Cycle path is fine.")
+                }
+                else {
+                    println!("Cycle repeats vertex");
                 }
             }
 
@@ -195,8 +212,8 @@ fn main() {
                         }
 
                         // Don't check path vectors, because multiple cycles can exist with different paths
-                        if !main_matrix.check_cycle(&vec_n, dist_n) || !main_matrix.check_cycle(&vec_p, dist_p) ||
-                            !main_matrix.check_cycle(&vec_d, dist_d) {
+                        if !main_matrix.check_length(&vec_n, dist_n) || !main_matrix.check_length(&vec_p, dist_p) ||
+                            !main_matrix.check_length(&vec_d, dist_d) {
                             println!("Path error");
                             break 'test;
                         }

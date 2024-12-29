@@ -1,6 +1,8 @@
 pub mod naive;
 pub mod dynamic;
 pub mod aco;
+pub mod tabu;
+pub mod sa;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone)]
