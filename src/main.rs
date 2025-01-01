@@ -2,6 +2,7 @@ use dyn_prog::{io, tsp, matrix};
 use std::time::SystemTime;
 
 const TEST_SIZE: [usize; 6] = [5, 10, 12, 13, 14, 15];
+const TEST_SIZE_2: [usize; 6] = [50, 100, 150, 200, 225, 250];
 
 fn main() {
     let mut main_matrix = matrix::Matrix::empty();
@@ -17,8 +18,8 @@ fn main() {
             println!("--------------------------------------------------------------------------");
             println!("Welcome to TSP program! Please select one of the options below");
             println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n\n11. Brute-force TSP.\n12. Worse dynamic TSP\n13. Dynamic TSP");
-            println!("14. ACO TSP\n15. Tabu search TSP\n");
-            println!("21. Check generated path.\n22. Stress test\n23. Delete output file\n\nAnything else will close the application");
+            println!("14. ACO TSP\n15. Tabu search TSP\n16. Simulated annealing TSP\n");
+            println!("21. Check generated path.\n22. Delete output file\n23. Test options\n23. Stress test\n\nAnything else will close the application");
             println!();
         }
 
@@ -125,6 +126,16 @@ fn main() {
                 println!("Dist = {dist}, vec = {vec:?}");
                 println!("Time {}", dur.as_secs_f64());
             }
+
+            16 => {
+                if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
+                let start_timestamp = SystemTime::now();
+                (vec, dist) = dyn_prog::tsp::sa::tso_sa(&main_matrix).unwrap();
+                let end_timestamp = SystemTime::now();
+                let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
+                println!("Dist = {dist}, vec = {vec:?}");
+                println!("Time {}", dur.as_secs_f64());
+            }
             
             21 => {
                 if main_matrix.check_length(&vec, dist) {
@@ -148,7 +159,7 @@ fn main() {
                 }
             }
 
-            22 => {
+            24 => {
                 let mut vec_n: Vec<usize>;
                 let mut vec_p: Vec<usize>;
                 let mut vec_d: Vec<usize>;
@@ -177,7 +188,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let worse = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file(num, dist_p, vec_p.clone(), worse, "dyn_struct").unwrap();
+                        io::store_test_data_in_file("output_test1".to_string(), num, dist_p, vec_p.clone(), worse, "dyn_struct").unwrap();
 
                         // dynamic
                         start_time = SystemTime::now();
@@ -187,7 +198,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let dynamic = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file(num, dist_d, vec_d.clone(), dynamic, "dyn_held-karp").unwrap();
+                        io::store_test_data_in_file("output_test1".to_string(), num, dist_d, vec_d.clone(), dynamic, "dyn_held-karp").unwrap();
 
                         // naive only to max 13
                         if num <= 13 {
@@ -198,7 +209,7 @@ fn main() {
                             };
                             end_time = SystemTime::now();
                             let naive = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                            io::store_test_data_in_file(num, dist_n, vec_n.clone(), naive, "naive").unwrap();
+                            io::store_test_data_in_file("output_test1".to_string(), num, dist_n, vec_n.clone(), naive, "naive").unwrap();
                         }
                         else {
                             vec_n = vec_p.clone();
@@ -221,7 +232,29 @@ fn main() {
                 }
             }
 
-            23 => {
+            25 => {
+                let mut vec_n: Vec<usize>;
+                let mut vec_p: Vec<usize>;
+                let mut vec_d: Vec<usize>;
+                let mut dist_n: usize;
+                let mut dist_p: usize;
+                let mut dist_d: usize;
+
+                let mut start_time: SystemTime;
+                let mut end_time: SystemTime;
+
+                println!("Insert number of iterations:");
+                input_buff.clear();
+                std::io::stdin().read_line(&mut input_buff).expect("Something wrong");
+                let x = input_buff.trim().parse::<usize>().expect("Should be a number");
+
+                // Held karp - metaheuristic comparasion
+                'comp: for _ in 0..x {
+                    
+                }
+            }
+
+            22 => {
                 if let Err(err) = io::clear_output_file() {
                     println!("{err}");
                 }

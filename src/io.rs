@@ -211,8 +211,8 @@ pub fn clear_output_file() -> Result<(), io::Error> {
     Ok(())
 }
 
-pub fn store_test_data_in_file(num: usize, dist: usize, vec: Vec<usize>, time: Option<std::time::Duration>, method: &str) -> Result<(), io::Error> {
-    let mut file = fs::OpenOptions::new().create(true).write(true).append(true).open("output.txt").unwrap();
+pub fn store_test_data_in_file(file_path: String, num: usize, dist: usize, vec: Vec<usize>, time: Option<std::time::Duration>, method: &str) -> Result<(), io::Error> {
+    let mut file = fs::OpenOptions::new().create(true).write(true).append(true).open(file_path).unwrap();
     let real_time = match time{
         Some(x) => x.as_nanos(),
         None => 0

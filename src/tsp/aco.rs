@@ -6,7 +6,7 @@ pub fn tsp_aco(m: &Matrix) -> Option<(Vec<usize>, usize)> {
     let mut path = vec![];
     let mut len = 0;
     for i in 0..crate::ACO_ITERAT{
-        if i % 20 == 0 {println!("ACO Iteration {i}");}
+        if i % 75 == 0 {println!("ACO Iteration {i}");}
         // Find for every ant path
         // Update pheromones
         // Multiply pheromones by the vanish constant
