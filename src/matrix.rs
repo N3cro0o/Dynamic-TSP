@@ -86,6 +86,10 @@ impl Matrix {
             matrix: vec![]
         }
     }
+    
+    pub fn return_density(&self) -> f32{
+        self.edges as f32 / (self.vertices * (self.vertices - 1)) as f32
+    }
 
     pub fn print_matrix(&self) {
         for i in self.matrix.iter() {
@@ -170,7 +174,9 @@ impl Matrix {
         let mut d = 0;
         let mut last = 0;
         for i in vec.iter(){
-            if self.matrix[last][*i] < 0 {return None}
+            if self.matrix[last][*i] < 0 {
+                return None
+            }
             d += self.matrix[last][*i] as usize;
             last = *i;
         }
@@ -205,6 +211,42 @@ impl Matrix {
             v.push(i);
         }
         v
+    }
+
+    pub fn get_random_cycle(&self) -> Vec<usize> {
+        let mut target:Vec<(usize, usize)> = vec![(0,0)]; // first vertex, second neighbor num
+        let mut end = vec![0];
+
+        loop {
+            let mut t = target.pop().unwrap();
+            end.pop();
+
+            'inner: for i in t.1..self.vertices {
+                if i == 0 {continue;}
+                for v in end.iter() {
+                    if *v == i {
+                        continue 'inner;
+                    } 
+                }
+
+                t.1 = i;
+                if self.matrix[t.0][i] > 0 {
+                    t.1 += 1;
+                    end.push(t.0);
+                    target.push(t);
+                    
+                    t = (i, 0);
+                    end.push(i);
+                    target.push(t);
+                    break;
+                }
+            }
+
+            if end.len() == self.vertices {
+                break;
+            }
+        }
+        end
     }
 }
 

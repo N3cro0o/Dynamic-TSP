@@ -1,19 +1,24 @@
 //SIMULATED ANNEALING BABYYYYYY
-use rand::Rng;
+use rand::{Rng, seq::SliceRandom, thread_rng};
 use crate::matrix::Matrix;
 use std::cmp::Ordering;
 
 pub fn tso_sa(m: &Matrix) -> Option<(Vec<usize>, usize)> {
     let mut len;
-
+    let mut rng = thread_rng();
+    
     let mut path = m.get_vertex_number_vec();
     path.remove(0);
+    path.shuffle(&mut rng);
     path.push(0);
 
     let mut temp = crate::SA_TEMPERATURE * m.vertices as f64;
     let mut same_sollution = 0;
     let mut same_len = 0;
-    len = m.get_cycle_length(&path).unwrap();
+    len = match m.get_cycle_length(&path) {
+        Some(x) => x,
+        None=> usize::MAX
+    };
 
     while same_len < crate::SA_SAME_LENGTH && same_sollution < crate::SA_SAME_SOLLUTION {
         // progress
@@ -27,7 +32,14 @@ pub fn tso_sa(m: &Matrix) -> Option<(Vec<usize>, usize)> {
         let cur_len;
         let cur_path;
         cur_path = swap_random_cities(&path);
-        cur_len = m.get_cycle_length(&cur_path).unwrap();
+        cur_len = match m.get_cycle_length(&cur_path) {
+            Some(x) => x,
+            None=> {
+                same_len += 1;
+                same_sollution += 1;
+                continue;
+            }
+        };
         
         match cur_len.cmp(&len) {
             Ordering::Less => {
@@ -60,8 +72,8 @@ pub fn tso_sa(m: &Matrix) -> Option<(Vec<usize>, usize)> {
 
         temp *= crate::SA_TEMPERATURE_DROP;
     }
-
-    Some((path, len))
+    if len == usize::MAX {None}
+    else {Some((path, len))}
 }
 
 fn swap_random_cities(path: &Vec<usize>) -> Vec<usize>{

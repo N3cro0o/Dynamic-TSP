@@ -4,16 +4,20 @@ use rand::{seq::SliceRandom, thread_rng};
 pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
     let mut len = 0;
     let mut min_len;
+    let mut rng = thread_rng();
 
     let mut path = m.get_vertex_number_vec();
     path.remove(0);
+    path.shuffle(&mut rng);
     path.push(0);
     let mut min_path = vec![];
 
     let mut tabu_vec: Vec<Vec<usize>> = vec![vec![0; m.vertices]; m.vertices];
-    let mut rng = thread_rng();
-    let mut strike: u8 = 0;
-    len = m.get_cycle_length(&path).unwrap();
+    let mut strike = 0;
+    len = match m.get_cycle_length(&path) {
+        Some(x) => x,
+        None=> usize::MAX
+    };
     min_path = path.clone();
     min_len = len;
 
@@ -22,13 +26,17 @@ pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
 
         let start_len = len;
         tabu_paths(m, &mut tabu_vec, &mut path);
-        len = m.get_cycle_length(&path).unwrap();
-        
+        len = match m.get_cycle_length(&path) {
+            Some(x) => x,
+            None=> usize::MAX
+        };
+
         if len < min_len {
             min_len = len;
             min_path = path.clone();
         }
 
+        // Decrease short-term tabu list
         for i in 0..m.vertices {
             for j in 0..m.vertices {
                 if tabu_vec[i][j] > 0 {
@@ -54,14 +62,18 @@ pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
         }
         else {strike = 0;}
     } 
-    Some((min_path, min_len as usize))
+    if min_len == usize::MAX {None}
+    else {Some((min_path, min_len as usize))}
 }
 
 fn tabu_paths(m: &Matrix, tabu: &mut Vec<Vec<usize>>, path: &mut Vec<usize>) {
     let mut cur_path;
     let mut min_path = path.clone();
     let mut cur_len = 0;
-    let mut min_len = m.get_cycle_length(&min_path).unwrap();
+    let mut min_len = match m.get_cycle_length(&min_path) {
+        Some(x) =>x,
+        None => usize::MAX
+    };
     let mut vertex_x = 0;
     let mut vertex_y = 0;
 
@@ -83,7 +95,10 @@ fn tabu_paths(m: &Matrix, tabu: &mut Vec<Vec<usize>>, path: &mut Vec<usize>) {
                 cur_path[vertex_x1] = y;
                 cur_path[vertex_y1] = x;
                 // Add path checking
-                cur_len = m.get_cycle_length(&cur_path).unwrap();
+                cur_len = match m.get_cycle_length(&cur_path) {
+                    Some(x) =>x,
+                    None => usize::MAX
+                };
 
                 if cur_len < min_len {
                     min_len = cur_len;

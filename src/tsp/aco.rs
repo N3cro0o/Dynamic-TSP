@@ -4,37 +4,34 @@ use rand::Rng;
 pub fn tsp_aco(m: &Matrix) -> Option<(Vec<usize>, usize)> {
     let mut pheromone = MatrixFloat::new_with_constant(m.vertices, 0.5);
     let mut path = vec![];
-    let mut len = 0;
-    for i in 0..crate::ACO_ITERAT{
+    let mut len = usize::MAX;
+    'outer: for i in 0..crate::ACO_ITERAT{
         if i % 75 == 0 {println!("ACO Iteration {i}");}
         // Find for every ant path
         // Update pheromones
         // Multiply pheromones by the vanish constant
+        // Get shortest path
         let mut ant_paths: Vec<Vec<usize>> = vec![];
         aco_ants(m, &pheromone, &mut ant_paths);
         pheromone.multiply_const(crate::ACO_PHERO_VANISH);
         aco_phero_path(m, &mut pheromone, &ant_paths);
-    }
-
-    // select path
-    let mut first = 0;
-    let mut vert = m.get_vertex_number_vec();
-    vert.remove(0);
-
-    while vert.len() != 0 {
-        let mut min = 0;
-        for i in 0..vert.len() {
-            if pheromone.matrix[first][vert[i]] > pheromone.matrix[first][vert[min]] {
-                min = i;
+        let mut cur_len = 0;
+        let mut first = 0;
+        for ver in ant_paths[0].iter() {
+            if m.matrix[first][*ver] > 0 {
+                cur_len += m.matrix[first][*ver] as usize;
+                first = *ver;
+            }
+            else {
+                continue 'outer;
             }
         }
-        min = vert.remove(min);
-        len += m.matrix[first][min] as usize;
-        path.push(min);
-        first = min;
+        if cur_len < len {
+            len = cur_len;
+            path = ant_paths[0].clone();
+        }
+
     }
-    len += m.matrix[first][0] as usize;
-    path.push(0);
     Some((path, len))
 }
 
@@ -42,7 +39,7 @@ fn aco_ants(m: &Matrix, phero: &MatrixFloat, paths: &mut Vec<Vec<usize>>) {
     let mut glob_target_vertex = 0;
     let ants = (m.vertices as f64 * crate::ACO_ANTS).trunc() as usize;
 
-    for _ in 0..ants {
+    'ant: for _ in 0..ants {
         // 1. Generate desired values 
         // 2. Find probability
         // 3. Randomize path
@@ -59,22 +56,44 @@ fn aco_ants(m: &Matrix, phero: &MatrixFloat, paths: &mut Vec<Vec<usize>>) {
         let mut path: Vec<usize> = vec![];
 
         while vertices.len() != 0 {
+            let mut ids = vec![];
             // Values
             d_values.clear();
             max_d_value = 0.0;
+            // Find path
+            let mut last_i = vertices[0];
+            for i in vertices.iter() {
+                if m.matrix[target_vertex][*i] > 0 {
+                    last_i = *i;
+                }
+            }
             for i in vertices.iter(){
-                let pheromone = phero.matrix[target_vertex][*i].powf(crate::ACO_APLHA);
-                let path_len = (crate::ACO_PATH_LEN_DIV / m.matrix[target_vertex][*i] as f64).powf(crate::ACO_BETA); // DIVION IS IMPORTANTE!!!!!! Now it gets the smallest path possible
+                let mut target = *i;
+                let pheromone = phero.matrix[target_vertex][target].powf(crate::ACO_APLHA);
+
+                let matrix_val;
+                if m.matrix[target_vertex][target] > 0 {
+                    matrix_val = m.matrix[target_vertex][target];
+                    last_i = target;
+                }
+                else {    
+                    matrix_val = m.matrix[target_vertex][last_i];
+                    target = last_i;
+                }
+
+                ids.push(target);
+                let path_len = (crate::ACO_PATH_LEN_DIV / matrix_val as f64).powf(crate::ACO_BETA); // DIVION IS IMPORTANTE!!!!!! Now it gets the smallest path possible
                 let x = pheromone * path_len; 
                 d_values.push(x);
                 max_d_value += x;
             }
             // Probability
             prob.clear();
-            for i in 0..vertices.len() {
+            for i in 0..d_values.len() {
                 prob.push(d_values[i] / max_d_value);
             }
             // Randomize next vertex
+            if prob.len() == 0 {continue 'ant;}
             let t = rand::thread_rng().gen();
             let mut id = 0;
             let mut sum = prob[0];
@@ -83,13 +102,19 @@ fn aco_ants(m: &Matrix, phero: &MatrixFloat, paths: &mut Vec<Vec<usize>>) {
                 sum += prob[id];
             }
             // Path
-            id = vertices.remove(id);
+            let mut pos = 0;
+            for i in 0..vertices.len() {
+                if vertices[i] == ids[id] {pos = i; break;}
+            }
+            id = vertices.remove(pos);
             path.push(id);
             target_vertex = id;
         }
         path.push(glob_target_vertex);
         // Store path
-        paths.push(path);
+        if path.len() == m.vertices {
+            paths.push(path);
+        }
         glob_target_vertex += 1;
         if glob_target_vertex >= m.vertices {
             glob_target_vertex = 0;
@@ -104,6 +129,10 @@ fn aco_phero_path(m: &Matrix, phero: &mut MatrixFloat, paths: &Vec<Vec<usize>>) 
         let mut len = 0;
         let mut first = p[p.len() - 1];
         for x in p.iter() {
+            if m.matrix[first][*x] <= 0 {
+                phero.matrix[first][*x] = 0.0;
+                continue;
+            }
             len += m.matrix[first][*x];
             first = *x;
         }

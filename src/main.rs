@@ -3,6 +3,7 @@ use std::time::SystemTime;
 
 const TEST_SIZE: [usize; 6] = [5, 10, 12, 13, 14, 15];
 const TEST_SIZE_2: [usize; 6] = [50, 100, 150, 200, 225, 250];
+const TEST_DENS: [f32; 5] = [1.0, 0.9, 0.8, 0.70, 0.5];
 
 fn main() {
     let mut main_matrix = matrix::Matrix::empty();
@@ -19,7 +20,7 @@ fn main() {
             println!("Welcome to TSP program! Please select one of the options below");
             println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n\n11. Brute-force TSP.\n12. Worse dynamic TSP\n13. Dynamic TSP");
             println!("14. ACO TSP\n15. Tabu search TSP\n16. Simulated annealing TSP\n");
-            println!("21. Check generated path.\n22. Delete output file\n23. Test options\n23. Stress test\n\nAnything else will close the application");
+            println!("21. Check generated path.\n22. Delete output file\n24. Test naive/dynamic\n25. Test ACO/SA/TS\n\nAnything else will close the application");
             println!();
         }
 
@@ -120,7 +121,13 @@ fn main() {
             15 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
                 let start_timestamp = SystemTime::now();
-                (vec, dist) = dyn_prog::tsp::tabu::tabu_tsp(&main_matrix).unwrap();
+                (vec, dist) = match dyn_prog::tsp::tabu::tabu_tsp(&main_matrix) {
+                    Some (t) => t,
+                    None => {
+                        println!("Couldn't find a path");
+                        (vec![], 0)
+                    }
+                };
                 let end_timestamp = SystemTime::now();
                 let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
                 println!("Dist = {dist}, vec = {vec:?}");
@@ -130,7 +137,13 @@ fn main() {
             16 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
                 let start_timestamp = SystemTime::now();
-                (vec, dist) = dyn_prog::tsp::sa::tso_sa(&main_matrix).unwrap();
+                (vec, dist) = match dyn_prog::tsp::sa::tso_sa(&main_matrix) {
+                    Some (t) => t,
+                    None => {
+                        println!("Couldn't find a path");
+                        (vec![], 0)
+                    }
+                };
                 let end_timestamp = SystemTime::now();
                 let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
                 println!("Dist = {dist}, vec = {vec:?}");
@@ -188,7 +201,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let worse = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output_test1".to_string(), num, dist_p, vec_p.clone(), worse, "dyn_struct").unwrap();
+                        io::store_test_data_in_file("output_test1.txt".to_string(), num, dist_p, 1.0, vec_p.clone(), worse, "dyn_struct").unwrap();
 
                         // dynamic
                         start_time = SystemTime::now();
@@ -198,7 +211,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let dynamic = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output_test1".to_string(), num, dist_d, vec_d.clone(), dynamic, "dyn_held-karp").unwrap();
+                        io::store_test_data_in_file("output_test1.txt".to_string(), num, dist_d, 1.0, vec_d.clone(), dynamic, "dyn_held-karp").unwrap();
 
                         // naive only to max 13
                         if num <= 13 {
@@ -209,7 +222,7 @@ fn main() {
                             };
                             end_time = SystemTime::now();
                             let naive = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                            io::store_test_data_in_file("output_test1".to_string(), num, dist_n, vec_n.clone(), naive, "naive").unwrap();
+                            io::store_test_data_in_file("output_test1.txt".to_string(), num, dist_n, 1.0, vec_n.clone(), naive, "naive").unwrap();
                         }
                         else {
                             vec_n = vec_p.clone();
@@ -233,25 +246,153 @@ fn main() {
             }
 
             25 => {
-                let mut vec_n: Vec<usize>;
-                let mut vec_p: Vec<usize>;
-                let mut vec_d: Vec<usize>;
-                let mut dist_n: usize;
-                let mut dist_p: usize;
-                let mut dist_d: usize;
+                let mut vec_aco: Vec<usize>;
+                let mut vec_sa: Vec<usize>;
+                let mut vec_ts: Vec<usize>;
+                let mut dist_aco: usize;
+                let mut dist_sa: usize;
+                let mut dist_ts: usize;
+                let mut dist_hk: usize;
+                let mut vec_hk: Vec<usize>;
+
+                let mut aco_err = 0;
+                let mut sa_err = 0;
+                let mut ts_err = 0;
 
                 let mut start_time: SystemTime;
                 let mut end_time: SystemTime;
 
-                println!("Insert number of iterations:");
+                println!("Insert number of comparasion iterations:");
                 input_buff.clear();
                 std::io::stdin().read_line(&mut input_buff).expect("Something wrong");
                 let x = input_buff.trim().parse::<usize>().expect("Should be a number");
 
+                println!("Insert number of main iterations:");
+                input_buff.clear();
+                std::io::stdin().read_line(&mut input_buff).expect("Something wrong");
+                let y = input_buff.trim().parse::<usize>().expect("Should be a number");
+
                 // Held karp - metaheuristic comparasion
-                'comp: for _ in 0..x {
-                    
+                for d in TEST_DENS {
+                    println!("Density: {d:.3}");
+                    for _ in 0..x {
+                        main_matrix = matrix::Matrix::new_with_density(25, d).randomize();
+                        // Held-Karp
+                        start_time = SystemTime::now();
+                        (vec_hk, dist_hk) = match tsp::dynamic::tsp_dyn_new(&main_matrix) {
+                            Some(tup) => tup,
+                            None => (vec![0], 0)
+                        };
+                        end_time = SystemTime::now();
+                        let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_hk, d, vec_hk.clone(), duart, "Held-Karp").unwrap();
+
+                        // ACO
+                        start_time = SystemTime::now();
+                        (vec_aco, dist_aco) = match tsp::aco::tsp_aco(&main_matrix) {
+                            Some(tup) => tup,
+                            None => (vec![0], 0)
+                        };
+                        end_time = SystemTime::now();
+                        let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_aco, d, vec_aco.clone(), duart, "ACO").unwrap();
+
+                        // SA
+                        start_time = SystemTime::now();
+                        (vec_sa, dist_sa) = match tsp::sa::tso_sa(&main_matrix) {
+                            Some(tup) => tup,
+                            None => (vec![0], 0)
+                        };
+                        end_time = SystemTime::now();
+                        let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_sa, d, vec_sa.clone(), duart, "SA").unwrap();
+
+                        // TS
+                        start_time = SystemTime::now();
+                        (vec_ts, dist_ts) = match tsp::tabu::tabu_tsp(&main_matrix) {
+                            Some(tup) => tup,
+                            None => (vec![0], 0)
+                        };
+                        end_time = SystemTime::now();
+                        let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_ts, d, vec_ts.clone(), duart, "TS").unwrap();
+
+                        // Tests
+                        // ACO
+                        if !main_matrix.check_length(&vec_aco, dist_aco) || !main_matrix.check_cycle(&vec_aco) {
+                            aco_err += 1;
+                            println!("Aco vec: {:?}\nAco dist: {dist_aco}", vec_aco);
+                        }
+                        
+                        // SA
+                        if !main_matrix.check_length(&vec_sa, dist_sa) || !main_matrix.check_cycle(&vec_sa) {
+                            sa_err += 1;
+                            println!("Sa vec: {:?}\nSa dist: {dist_sa}", vec_sa);
+                        }
+
+                        // TS
+                        if !main_matrix.check_length(&vec_ts, dist_ts) || !main_matrix.check_cycle(&vec_ts) {
+                            ts_err += 1;
+                            println!("Ts vec: {:?}\nTs dist: {dist_ts}", vec_ts);
+                        }
+                    }
                 }
+                println!("Errors:\nACO: {aco_err}\nSA: {sa_err}\nTS: {ts_err}");
+                for l in TEST_SIZE_2 {
+                    println!("Size: {l}");
+                    for _ in 0..y {
+                        main_matrix = matrix::Matrix::new_with_density(l, 1.0).randomize();
+                        // ACO
+                        start_time = SystemTime::now();
+                        (vec_aco, dist_aco) = match tsp::aco::tsp_aco(&main_matrix) {
+                            Some(tup) => tup,
+                            None => (vec![0], 0)
+                        };
+                        end_time = SystemTime::now();
+                        let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        io::store_test_data_in_file("output-meta-test.txt".to_string(), l, dist_aco, 1.0, vec_aco.clone(), duart, "ACO").unwrap();
+
+                        // SA
+                        start_time = SystemTime::now();
+                        (vec_sa, dist_sa) = match tsp::sa::tso_sa(&main_matrix) {
+                            Some(tup) => tup,
+                            None => (vec![0], 0)
+                        };
+                        end_time = SystemTime::now();
+                        let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        io::store_test_data_in_file("output-meta-test.txt".to_string(), l, dist_sa, 1.0, vec_sa.clone(), duart, "SA").unwrap();
+
+                        // TS
+                        start_time = SystemTime::now();
+                        (vec_ts, dist_ts) = match tsp::tabu::tabu_tsp(&main_matrix) {
+                            Some(tup) => tup,
+                            None => (vec![0], 0)
+                        };
+                        end_time = SystemTime::now();
+                        let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
+                        io::store_test_data_in_file("output-meta-test.txt".to_string(), l, dist_ts, 1.0, vec_ts.clone(), duart, "TS").unwrap();
+
+                        // Tests
+                        // ACO
+                        if !main_matrix.check_length(&vec_aco, dist_aco) || !main_matrix.check_cycle(&vec_aco) {
+                            aco_err += 1;
+                            println!("Aco vec: {:?}\nAco dist: {dist_aco}", vec_aco);
+                        }
+                        
+                        // SA
+                        if !main_matrix.check_length(&vec_sa, dist_sa) || !main_matrix.check_cycle(&vec_sa) {
+                            sa_err += 1;
+                            println!("Sa vec: {:?}\nSa dist: {dist_sa}", vec_sa);
+                        }
+
+                        // TS
+                        if !main_matrix.check_length(&vec_ts, dist_ts) || !main_matrix.check_cycle(&vec_ts) {
+                            ts_err += 1;
+                            println!("Ts vec: {:?}\nTs dist: {dist_ts}", vec_ts);
+                        }
+                    }
+                }
+                println!("Errors:\nACO: {aco_err}\nSA: {sa_err}\nTS: {ts_err}");
             }
 
             22 => {
