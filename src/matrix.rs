@@ -195,12 +195,12 @@ impl Matrix {
     }
 
     pub fn check_cycle(&self, vec: &Vec<usize>) -> bool{
-        // Correct cycle
-        if vec[self.vertices - 1] != 0 {
-            return false;
-        }
         // Length
         if vec.len() != self.vertices {
+            return false;
+        }
+        // Correct cycle
+        if vec[self.vertices - 1] != 0 {
             return false;
         }
         // Repeats

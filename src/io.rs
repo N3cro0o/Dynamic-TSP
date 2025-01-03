@@ -212,12 +212,18 @@ pub fn clear_output_file(file_path: String) -> Result<(), io::Error> {
 }
 
 pub fn store_test_data_in_file(file_path: String, num: usize, dist: usize, dens:f32, vec: Vec<usize>, time: Option<std::time::Duration>, method: &str) -> Result<(), io::Error> {
-    let mut file = fs::OpenOptions::new().create(true).write(true).append(true).open(file_path).unwrap();
+    let mut file = fs::OpenOptions::new().create(true).write(true).append(true).open(file_path)?;
     let real_time = match time{
         Some(x) => x.as_nanos(),
         None => 0
     };
     file.write(format!("{};{:.3};{};{};{:?};{}\n", num, dens, method, real_time, vec, dist).as_bytes())?;
+    Ok(())
+}
+
+pub fn store_text_in_file(file_path: String, text: &str) -> Result<(), io::Error> {
+    let mut file = fs::OpenOptions::new().create(true).write(true).append(true).open(file_path)?;
+    file.write(text.as_bytes())?;
     Ok(())
 }
 

@@ -263,6 +263,13 @@ fn aco_ants_thread(m: &Matrix, phero: &MatrixFloat, paths: &mut Vec<Vec<usize>>)
             glob_target_vertex = 0;
         }
     }
+    for handle in ant_threads {
+        let x = handle.join();
+        if let Err(_) = x {
+            println!("Thread didn't work properly");
+        }
+    }
+
     std::mem::drop(tx); // Drop original transmiter, we don't want an endless loop, amrite?
     for r in rx {
         // Store path

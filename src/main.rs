@@ -301,7 +301,7 @@ fn main() {
                         start_time = SystemTime::now();
                         (vec_aco, dist_aco) = match tsp::aco::tsp_aco_thread(&main_matrix) {
                             Some(tup) => tup,
-                            None => (vec![0], 0)
+                            None => (vec![], 0)
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
@@ -311,7 +311,7 @@ fn main() {
                         start_time = SystemTime::now();
                         (vec_sa, dist_sa) = match tsp::sa::tso_sa(&main_matrix) {
                             Some(tup) => tup,
-                            None => (vec![0], 0)
+                            None => (vec![], 0)
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
@@ -321,7 +321,7 @@ fn main() {
                         start_time = SystemTime::now();
                         (vec_ts, dist_ts) = match tsp::tabu::tabu_tsp(&main_matrix) {
                             Some(tup) => tup,
-                            None => (vec![0], 0)
+                            None => (vec![], 0)
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
@@ -347,6 +347,7 @@ fn main() {
                         }
                     }
                 }
+                io::store_text_in_file("output-test-add.txt".to_string(), &format!("Test1;\nACO;{aco_err}\nSA;{sa_err};\nTS;{ts_err};")).unwrap();
                 println!("Errors:\nACO: {aco_err}\nSA: {sa_err}\nTS: {ts_err}");
                 for l in TEST_SIZE_2 {
                     for it in 0..y {
@@ -356,7 +357,7 @@ fn main() {
                         start_time = SystemTime::now();
                         (vec_aco, dist_aco) = match tsp::aco::tsp_aco_thread(&main_matrix) {
                             Some(tup) => tup,
-                            None => (vec![0], 0)
+                            None => (vec![], 0)
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
@@ -366,7 +367,7 @@ fn main() {
                         start_time = SystemTime::now();
                         (vec_sa, dist_sa) = match tsp::sa::tso_sa(&main_matrix) {
                             Some(tup) => tup,
-                            None => (vec![0], 0)
+                            None => (vec![], 0)
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
@@ -376,7 +377,7 @@ fn main() {
                         start_time = SystemTime::now();
                         (vec_ts, dist_ts) = match tsp::tabu::tabu_tsp(&main_matrix) {
                             Some(tup) => tup,
-                            None => (vec![0], 0)
+                            None => (vec![], 0)
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
@@ -402,6 +403,7 @@ fn main() {
                         }
                     }
                 }
+                io::store_text_in_file("output-test-add.txt".to_string(), &format!("Test2;\nACO;{aco_err}\nSA;{sa_err};\nTS;{ts_err};")).unwrap();
                 println!("Errors:\nACO: {aco_err}\nSA: {sa_err}\nTS: {ts_err}");
             }
 
