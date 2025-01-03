@@ -10,6 +10,7 @@ pub struct Matrix {
     pub matrix: Vec<Vec<isize>>
 }
 
+#[derive(Debug, Clone)]
 pub struct MatrixFloat {
     pub edges: usize,
     pub vertices: usize,
@@ -194,6 +195,14 @@ impl Matrix {
     }
 
     pub fn check_cycle(&self, vec: &Vec<usize>) -> bool{
+        // Correct cycle
+        if vec[self.vertices - 1] != 0 {
+            return false;
+        }
+        // Length
+        if vec.len() != self.vertices {
+            return false;
+        }
         // Repeats
         let mut repeats_vec = vec![];
         for p in vec.iter() {

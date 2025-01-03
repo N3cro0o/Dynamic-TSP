@@ -2,7 +2,7 @@ use crate::matrix::Matrix;
 use rand::{seq::SliceRandom, thread_rng};
 
 pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
-    let mut len = 0;
+    let mut len;
     let mut min_len;
     let mut rng = thread_rng();
 
@@ -10,7 +10,7 @@ pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
     path.remove(0);
     path.shuffle(&mut rng);
     path.push(0);
-    let mut min_path = vec![];
+    let mut min_path;
 
     let mut tabu_vec: Vec<Vec<usize>> = vec![vec![0; m.vertices]; m.vertices];
     let mut strike = 0;
@@ -69,7 +69,7 @@ pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
 fn tabu_paths(m: &Matrix, tabu: &mut Vec<Vec<usize>>, path: &mut Vec<usize>) {
     let mut cur_path;
     let mut min_path = path.clone();
-    let mut cur_len = 0;
+    let mut cur_len;
     let mut min_len = match m.get_cycle_length(&min_path) {
         Some(x) =>x,
         None => usize::MAX

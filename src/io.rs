@@ -206,8 +206,8 @@ fn console_read_f32() -> Result<f32, &'static str> {
     Ok(x)
 }
 
-pub fn clear_output_file() -> Result<(), io::Error> {
-    fs::remove_file("output.txt")?;
+pub fn clear_output_file(file_path: String) -> Result<(), io::Error> {
+    fs::remove_file(file_path)?;
     Ok(())
 }
 

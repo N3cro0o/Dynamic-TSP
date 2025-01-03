@@ -1,8 +1,8 @@
-use dyn_prog::{io, tsp, matrix};
+use dyn_prog::{io, matrix::{self, Matrix}, tsp};
 use std::time::SystemTime;
 
 const TEST_SIZE: [usize; 6] = [5, 10, 12, 13, 14, 15];
-const TEST_SIZE_2: [usize; 6] = [50, 100, 150, 200, 225, 250];
+const TEST_SIZE_2: [usize; 6] = [50, 100, 125, 150, 175, 200];
 const TEST_DENS: [f32; 5] = [1.0, 0.9, 0.8, 0.70, 0.5];
 
 fn main() {
@@ -19,8 +19,8 @@ fn main() {
             println!("--------------------------------------------------------------------------");
             println!("Welcome to TSP program! Please select one of the options below");
             println!("0.  Print matrix\n1.  Density-based generation.\n2.  Read from file.\n3.  Permutations check\n\n11. Brute-force TSP.\n12. Worse dynamic TSP\n13. Dynamic TSP");
-            println!("14. ACO TSP\n15. Tabu search TSP\n16. Simulated annealing TSP\n");
-            println!("21. Check generated path.\n22. Delete output file\n24. Test naive/dynamic\n25. Test ACO/SA/TS\n\nAnything else will close the application");
+            println!("14. ACO TSP\n15. ACO parallel TSP\n16. Tabu search TSP\n17. Simulated annealing TSP\n");
+            println!("21. Check generated path.\n22. Delete output file\n24. Test naive/dynamic\n25. Test ACO/SA/TS\n31. ACO parallel speed test\n\nAnything else will close the application");
             println!();
         }
 
@@ -121,6 +121,16 @@ fn main() {
             15 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
                 let start_timestamp = SystemTime::now();
+                (vec, dist) = dyn_prog::tsp::aco::tsp_aco_thread(&main_matrix).unwrap();
+                let end_timestamp = SystemTime::now();
+                let dur = SystemTime::duration_since(&end_timestamp, start_timestamp).unwrap();
+                println!("Dist = {dist}, vec = {vec:?}");
+                println!("Time {}", dur.as_secs_f64());
+            }
+
+            16 => {
+                if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
+                let start_timestamp = SystemTime::now();
                 (vec, dist) = match dyn_prog::tsp::tabu::tabu_tsp(&main_matrix) {
                     Some (t) => t,
                     None => {
@@ -134,7 +144,7 @@ fn main() {
                 println!("Time {}", dur.as_secs_f64());
             }
 
-            16 => {
+            17 => {
                 if main_matrix.is_empty() == true {println!("Matrix is empty!"); continue 'main;}
                 let start_timestamp = SystemTime::now();
                 (vec, dist) = match dyn_prog::tsp::sa::tso_sa(&main_matrix) {
@@ -276,7 +286,7 @@ fn main() {
                 for d in TEST_DENS {
                     println!("Density: {d:.3}");
                     for _ in 0..x {
-                        main_matrix = matrix::Matrix::new_with_density(25, d).randomize();
+                        main_matrix = matrix::Matrix::new_with_density(23, d).randomize();
                         // Held-Karp
                         start_time = SystemTime::now();
                         (vec_hk, dist_hk) = match tsp::dynamic::tsp_dyn_new(&main_matrix) {
@@ -285,7 +295,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_hk, d, vec_hk.clone(), duart, "Held-Karp").unwrap();
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 23, dist_hk, d, vec_hk.clone(), duart, "Held-Karp").unwrap();
 
                         // ACO
                         start_time = SystemTime::now();
@@ -295,7 +305,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_aco, d, vec_aco.clone(), duart, "ACO").unwrap();
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 23, dist_aco, d, vec_aco.clone(), duart, "ACO").unwrap();
 
                         // SA
                         start_time = SystemTime::now();
@@ -305,7 +315,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_sa, d, vec_sa.clone(), duart, "SA").unwrap();
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 23, dist_sa, d, vec_sa.clone(), duart, "SA").unwrap();
 
                         // TS
                         start_time = SystemTime::now();
@@ -396,8 +406,50 @@ fn main() {
             }
 
             22 => {
-                if let Err(err) = io::clear_output_file() {
+                if let Err(err) = io::clear_output_file("output-meta-test.txt".to_string()) {
                     println!("{err}");
+                }
+                if let Err(err) = io::clear_output_file("output-comp-test.txt".to_string()) {
+                    println!("{err}");
+                }
+                if let Err(err) = io::clear_output_file("output_test1.txt".to_string()) {
+                    println!("{err}");
+                }
+            }
+
+            31 => {
+                let mut thread_time = vec![0; TEST_DENS.len()];
+                let mut normal_time = vec![0; TEST_DENS.len()];
+
+                let mut start_time: SystemTime;
+                let mut end_time: SystemTime;
+
+                let mut i = 0;
+                for d in TEST_DENS {
+                    println!("Density: {d:.3}");
+                    for _ in 0..50 {
+                        let m = Matrix::new_with_density(100, d).randomize();
+
+                        start_time = SystemTime::now();
+                        tsp::aco::tsp_aco(&m);
+                        end_time = SystemTime::now();
+                        let duart = SystemTime::duration_since(&end_time, start_time).unwrap();
+                        normal_time[i] += duart.as_nanos();
+
+                        start_time = SystemTime::now();
+                        tsp::aco::tsp_aco_thread(&m);
+                        end_time = SystemTime::now();
+                        let duart = SystemTime::duration_since(&end_time, start_time).unwrap();
+                        thread_time[i] += duart.as_nanos();
+                    }
+                    i += 1;
+                }
+                for i in 0.. TEST_DENS.len() {
+                    println!("Density: {:.3}", TEST_DENS[i]);
+                    let normal_mean = normal_time[i] as f64 / i as f64;
+                    let thread_mean = thread_time[i] as f64 / i as f64;
+                    println!("Mean normal time: {:.4}\nMean parallel time: {:.4}\nRatio normal\\parallel: {:.4}", (normal_mean / 1_000_000_000.0),
+                        (thread_mean / 1_000_000_000.0), normal_mean / thread_mean);
                 }
             }
 
