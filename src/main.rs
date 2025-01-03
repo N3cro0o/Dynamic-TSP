@@ -199,8 +199,8 @@ fn main() {
                 let x = input_buff.trim().parse::<usize>().expect("Should be a number");
 
                 'test: for num in TEST_SIZE {
-                    println!("----------------------| {num} |-------------------------");
-                    for _ in 0..x {
+                    for it in 0..x {
+                        println!("Length: {num}, iteration: {:1}", it + 1);
                         main_matrix = matrix::Matrix::new_with_density(num, 1.0).randomize();
                         
                         // my take
@@ -284,8 +284,8 @@ fn main() {
 
                 // Held karp - metaheuristic comparasion
                 for d in TEST_DENS {
-                    println!("Density: {d:.3}");
-                    for _ in 0..x {
+                    for it in 0..x {
+                        println!("Density: {d:.3}, iteration: {:1}", it + 1);
                         main_matrix = matrix::Matrix::new_with_density(23, d).randomize();
                         // Held-Karp
                         start_time = SystemTime::now();
@@ -299,7 +299,7 @@ fn main() {
 
                         // ACO
                         start_time = SystemTime::now();
-                        (vec_aco, dist_aco) = match tsp::aco::tsp_aco(&main_matrix) {
+                        (vec_aco, dist_aco) = match tsp::aco::tsp_aco_thread(&main_matrix) {
                             Some(tup) => tup,
                             None => (vec![0], 0)
                         };
@@ -349,12 +349,12 @@ fn main() {
                 }
                 println!("Errors:\nACO: {aco_err}\nSA: {sa_err}\nTS: {ts_err}");
                 for l in TEST_SIZE_2 {
-                    println!("Size: {l}");
-                    for _ in 0..y {
+                    for it in 0..y {
+                        println!("Length: {l}, iteration: {:1}", it + 1);
                         main_matrix = matrix::Matrix::new_with_density(l, 1.0).randomize();
                         // ACO
                         start_time = SystemTime::now();
-                        (vec_aco, dist_aco) = match tsp::aco::tsp_aco(&main_matrix) {
+                        (vec_aco, dist_aco) = match tsp::aco::tsp_aco_thread(&main_matrix) {
                             Some(tup) => tup,
                             None => (vec![0], 0)
                         };
@@ -424,11 +424,11 @@ fn main() {
                 let mut start_time: SystemTime;
                 let mut end_time: SystemTime;
 
-                let mut i = 0;
-                for d in TEST_DENS {
-                    println!("Density: {d:.3}");
-                    for _ in 0..50 {
-                        let m = Matrix::new_with_density(100, d).randomize();
+                for i in 0..TEST_DENS.len() {
+                    let d = TEST_DENS[i];
+                    for it in 0..50 {
+                        println!("Density: {d:.3}, iteration: {:1}", it + 1);
+                        let m = Matrix::new_with_density(75, d).randomize();
 
                         start_time = SystemTime::now();
                         tsp::aco::tsp_aco(&m);
@@ -442,12 +442,11 @@ fn main() {
                         let duart = SystemTime::duration_since(&end_time, start_time).unwrap();
                         thread_time[i] += duart.as_nanos();
                     }
-                    i += 1;
                 }
                 for i in 0.. TEST_DENS.len() {
-                    println!("Density: {:.3}", TEST_DENS[i]);
-                    let normal_mean = normal_time[i] as f64 / i as f64;
-                    let thread_mean = thread_time[i] as f64 / i as f64;
+                    println!("\nDensity: {:.3}", TEST_DENS[i]);
+                    let normal_mean = normal_time[i] as f64 / 50 as f64;
+                    let thread_mean = thread_time[i] as f64 / 50 as f64;
                     println!("Mean normal time: {:.4}\nMean parallel time: {:.4}\nRatio normal\\parallel: {:.4}", (normal_mean / 1_000_000_000.0),
                         (thread_mean / 1_000_000_000.0), normal_mean / thread_mean);
                 }

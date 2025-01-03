@@ -22,7 +22,7 @@ pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
     min_len = len;
 
     for i in 0..crate::TABU_ITERAT {
-        if i % 75 == 0 {println!("Tabu search Iteration {i}");}
+        if i % 75 == 0 {println!("Tabu search Iteration: {i}");}
 
         let start_len = len;
         tabu_paths(m, &mut tabu_vec, &mut path);
