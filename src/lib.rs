@@ -4,7 +4,6 @@ pub mod io;
 pub mod matrix;
 
 const ACO_ANTS: f64 = 1.0;
-const ACO_PATH_LEN_DIV: f64 = 10.0;
 const ACO_ITERAT: isize = 350;
 const ACO_PHERO_VANISH: f64 = 0.65;
 const ACO_APLHA: f64 = 0.8;

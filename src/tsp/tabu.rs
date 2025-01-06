@@ -28,7 +28,10 @@ pub fn tabu_tsp(m: &Matrix) -> Option<(Vec<usize>, usize)> {
         tabu_paths(m, &mut tabu_vec, &mut path);
         len = match m.get_cycle_length(&path) {
             Some(x) => x,
-            None=> usize::MAX
+            None=> {
+                strike = crate::TABU_MAXSTRIKES;
+                usize::MAX
+            }
         };
 
         if len < min_len {

@@ -89,7 +89,7 @@ fn aco_ants(m: &Matrix, phero: &MatrixFloat, paths: &mut Vec<Vec<usize>>) {
                 }
 
                 ids.push(target);
-                let path_len = (crate::ACO_PATH_LEN_DIV / matrix_val as f64).powf(crate::ACO_BETA); // DIVION IS IMPORTANTE!!!!!! Now it gets the smallest path possible
+                let path_len = (10.0 / matrix_val as f64).powf(crate::ACO_BETA); // DIVION IS IMPORTANTE!!!!!! Now it gets the smallest path possible
                 let x = pheromone * path_len; 
                 d_values.push(x);
                 max_d_value += x;
@@ -224,7 +224,7 @@ fn aco_ants_thread(m: &Matrix, phero: &MatrixFloat, paths: &mut Vec<Vec<usize>>)
                     }
     
                     ids.push(target);
-                    let path_len = (crate::ACO_PATH_LEN_DIV / matrix_val as f64).powf(crate::ACO_BETA); // DIVION IS IMPORTANTE!!!!!! Now it gets the smallest path possible
+                    let path_len = (10.0 / matrix_val as f64).powf(crate::ACO_BETA); // DIVION IS IMPORTANTE!!!!!! Now it gets the smallest path possible
                     let x = pheromone * path_len; 
                     d_values.push(x);
                     max_d_value += x;

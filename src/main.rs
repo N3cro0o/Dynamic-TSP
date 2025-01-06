@@ -305,7 +305,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 23, dist_aco, d, vec_aco.clone(), duart, "ACO").unwrap();
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 23, dist_aco, d, vec_aco.clone(), duart, "ACO-P").unwrap();
 
                         // SA
                         start_time = SystemTime::now();
@@ -325,7 +325,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 25, dist_ts, d, vec_ts.clone(), duart, "TS").unwrap();
+                        io::store_test_data_in_file("output-comp-test.txt".to_string(), 23, dist_ts, d, vec_ts.clone(), duart, "TS").unwrap();
 
                         // Tests
                         // ACO
@@ -361,7 +361,7 @@ fn main() {
                         };
                         end_time = SystemTime::now();
                         let duart = Some(SystemTime::duration_since(&end_time, start_time).unwrap());
-                        io::store_test_data_in_file("output-meta-test.txt".to_string(), l, dist_aco, 1.0, vec_aco.clone(), duart, "ACO").unwrap();
+                        io::store_test_data_in_file("output-meta-test.txt".to_string(), l, dist_aco, 1.0, vec_aco.clone(), duart, "ACO-P").unwrap();
 
                         // SA
                         start_time = SystemTime::now();
